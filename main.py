@@ -8,6 +8,8 @@ from config import (
     STATE_MENU, STATE_PLAY,
     FONT
 )
+from room import Room
+import random
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -54,54 +56,6 @@ class Player(pygame.sprite.Sprite):
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
 
 
-class Room:
-    def __init__(self, position, color, description):
-        self.position = position
-        self.color = color
-        self.description = description
-        self.walls = []
-        self.doors = []
-
-    def generate_walls_and_doors(self, grid):
-        self.walls.clear()
-        self.doors.clear()
-
-        def has_neighbor(direction):
-            r, c = self.position
-            if direction == 'up': return (r - 1, c) in grid
-            if direction == 'down': return (r + 1, c) in grid
-            if direction == 'left': return (r, c - 1) in grid
-            if direction == 'right': return (r, c + 1) in grid
-            return False
-
-        W, SW, SH, door_size = WALL_THICKNESS, SCREEN_WIDTH, SCREEN_HEIGHT, DOOR_SIZE
-        center_x, center_y = (SW - door_size) // 2, (SH - door_size) // 2
-
-        if has_neighbor('up'):
-            self.doors.append(('up', pygame.Rect(center_x, 0, door_size, W)))
-        else:
-            self.walls.append(pygame.Rect(0, 0, SW, W))
-
-        if has_neighbor('down'):
-            self.doors.append(('down', pygame.Rect(center_x, SH - W, door_size, W)))
-        else:
-            self.walls.append(pygame.Rect(0, SH - W, SW, W))
-
-        if has_neighbor('left'):
-            self.doors.append(('left', pygame.Rect(0, center_y, W, door_size)))
-        else:
-            self.walls.append(pygame.Rect(0, 0, W, SH))
-
-        if has_neighbor('right'):
-            self.doors.append(('right', pygame.Rect(SW - W, center_y, W, door_size)))
-        else:
-            self.walls.append(pygame.Rect(SW - W, 0, W, SH))
-
-    def draw(self, surface):
-        surface.fill(self.color)
-        surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
-        for wall in self.walls: pygame.draw.rect(surface, (100, 100, 100), wall)
-        for _, door in self.doors: pygame.draw.rect(surface, (255, 0, 0), door)
 
 
 def draw_minimap(surface, grid, current_pos):
@@ -141,18 +95,35 @@ def menu_events(btns):
                     return i
     return None
 
+def generate_random_grid(num_rooms=5):
+    grid = {}
+    start = (0, 0)
+    grid[start] = Room(start, random_color(), "Salle de départ")
+    current_positions = [start]
+
+    for i in range(1, num_rooms):
+        base = random.choice(current_positions)
+        r, c = base
+        possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+        random.shuffle(possible)
+
+        for pos in possible:
+            if pos not in grid:
+                grid[pos] = Room(pos, random_color(), f"Salle {i+1}")
+                current_positions.append(pos)
+                break
+
+    for room in grid.values():
+        room.generate_walls_and_doors(grid)
+    return grid
+
+
+def random_color():
+    return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
 
 def main():
     state = STATE_MENU
-    grid = {
-        (0, 0): Room((0, 0), (40, 40, 100), "Salle 1 - Début"),
-        (0, 1): Room((0, 1), (100, 40, 40), "Salle 2 - Danger"),
-        (1, 0): Room((1, 0), (40, 100, 40), "Salle 3 - Repos"),
-        (1, 1): Room((1, 1), (40, 100, 40), "Salle 4 - Repos"),
-        (2, 1): Room((2, 1), (40, 100, 40), "Salle 5 - Repos")
-    }
-
-    for room in grid.values(): room.generate_walls_and_doors(grid)
+    grid = generate_random_grid(num_rooms=5)
     current_pos, current_room = (0, 0), grid[(0, 0)]
     player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -196,4 +167,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
