@@ -1,5 +1,6 @@
 import pygame
 from enemy import Enemy
+from medicament import Medicament
 from pygame.locals import *
 import sys
 from config import (
@@ -15,7 +16,7 @@ import math
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Isaac-like Base with Auto Walls, Doors & Minimap')
+pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
 
 class Player(pygame.sprite.Sprite):
@@ -76,7 +77,7 @@ def draw_minimap(surface, grid, current_pos):
 
 def draw_menu():
     screen.fill((30, 30, 30))
-    title = FONT.render("Mon menu Isaac-like", True, (255, 255, 0))
+    title = FONT.render("Contagium", True, (255, 255, 0))
     play_btn = FONT.render("Jouer", True, (255, 255, 255))
     quit_btn = FONT.render("Quitter", True, (255, 255, 255))
     screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
@@ -129,6 +130,7 @@ def main():
     current_pos, current_room = (0, 0), grid[(0, 0)]
     player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT)
     enemy = Enemy(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4, player, SCREEN_WIDTH, SCREEN_HEIGHT)
+    medicament = Medicament(3 * SCREEN_WIDTH // 4, 3 * SCREEN_HEIGHT // 4, player, SCREEN_WIDTH, SCREEN_HEIGHT)
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     
     while True:
@@ -150,7 +152,12 @@ def main():
             keys = pygame.key.get_pressed()
             player.update(keys, current_room.walls)
             enemy.update(current_room.walls)
-            
+            medicament.update()
+
+            # 💡 Système de collecte
+            if not medicament.collected and player.rect.colliderect(medicament.rect):
+                medicament.collect()
+
             for direction, door in current_room.doors:
                 if player.rect.colliderect(door):
                     r, c = current_pos
@@ -174,10 +181,12 @@ def main():
             current_room.draw_contents(screen)
             screen.blit(player.surf, player.rect)
             enemy.draw(screen)
+            medicament.draw(screen)  # <-- Plus rien ne s'affichera s'il est collecté
             draw_minimap(screen, grid, current_pos)
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))
             pygame.display.flip()
             clock.tick(60)
+
 
 if __name__ == "__main__":
     main()
