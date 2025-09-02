@@ -6,10 +6,10 @@ from obstacle import Obstacle
 from medicament import Medicament
 
 class Room:
-    def __init__(self, position, color, description, nb_medicaments=3):
+    def __init__(self, position, color, description, nb_medicaments=1000, nb_ennemis=None):
         """
-        Initialise une pièce avec sa position dans la grille, sa couleur, sa description,
-        et le nombre de médicaments à générer.
+        Initialise une pièce avec sa position, sa couleur, sa description,
+        le nombre de médicaments et d'ennemis (aléatoire si non précisé).
         """
         self.position = position
         self.color = color
@@ -18,8 +18,8 @@ class Room:
         # Listes dynamiques pour le rendu
         self.walls = []          # Murs extérieurs
         self.doors = []          # Portes
-        self.enemies = []        # Ennemis dans la pièce
-        self.obstacles = []      # Obstacles (tables, caisses...)
+        self.enemies = []        # Ennemis
+        self.obstacles = []      # Obstacles
         self.internal_walls = [] # Murs internes
         self.chests = []         # Coffres
 
@@ -29,12 +29,12 @@ class Room:
         self.medicaments_positions = []  # Coordonnées mémorisées
         self.medicaments_state = {}      # État collecté ou non
 
-        # Mémorisation des murs internes et obstacles pour revenir dans la pièce
+        # Positions sauvegardées pour recréer les mêmes obstacles/murs
         self.internal_walls_positions = []  
         self.obstacles_positions = []       
 
-        # Nombre d’ennemis à conserver entre les visites
-        self.nb_enemies_in_room = None
+        # Nombre d’ennemis fixe pour cette pièce
+        self.nb_enemies_in_room = nb_ennemis
 
     def generate_walls_and_doors(self, grid):
         """
@@ -44,7 +44,6 @@ class Room:
         self.walls.clear()
         self.doors.clear()
 
-        # Vérifie si une pièce voisine existe dans la direction donnée
         def has_neighbor(direction):
             r, c = self.position
             if direction == 'up': return (r - 1, c) in grid
@@ -56,7 +55,6 @@ class Room:
         W, SW, SH, door_size = WALL_THICKNESS, SCREEN_WIDTH, SCREEN_HEIGHT, DOOR_SIZE
         center_x, center_y = (SW - door_size) // 2, (SH - DOOR_SIZE) // 2
 
-        # Génération ou portes/murs selon la présence d’une pièce voisine
         if has_neighbor('up'):
             self.doors.append(('up', pygame.Rect(center_x, 0, door_size, W)))
         else:
@@ -76,49 +74,43 @@ class Room:
 
     def generate_contents(self, player, screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT):
         """
-        Génère tous les contenus de la pièce : ennemis, obstacles, murs internes,
-        coffres et médicaments. Les positions sont mémorisées pour revenir
-        dans la pièce exactement comme avant.
+        Génère les contenus : ennemis, obstacles, murs internes, coffres, médicaments.
+        Les positions et états sont mémorisés.
         """
-        # Réinitialisation des listes dynamiques pour le rendu
         self.internal_walls.clear()
         self.obstacles.clear()
         self.chests.clear()
         self.medicaments.clear()
 
-        # Définir le nombre d’ennemis une seule fois
+        # Définir nb ennemis si pas encore fait
         if self.nb_enemies_in_room is None:
             self.nb_enemies_in_room = random.randint(1, 4)
 
-        # Génération aléatoire des ennemis en évitant les portes
+        # Génération des ennemis
         self.enemies.clear()
-        margin = 50  # Marge pour ne pas spawn trop proche des murs/portes
+        margin = 50
         door_areas = [door for _, door in self.doors]
         for _ in range(self.nb_enemies_in_room):
             while True:
                 x = random.randint(WALL_THICKNESS + margin, screen_width - WALL_THICKNESS - margin)
                 y = random.randint(WALL_THICKNESS + margin, screen_height - WALL_THICKNESS - margin)
                 new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
-                # Vérifie qu’aucun ennemi n’est trop proche d’une porte
                 if not any(new_rect.colliderect(door.inflate(50, 50)) for door in door_areas):
                     break
             self.enemies.append(Enemy(x, y, player, screen_width, screen_height))
 
-        # Génération des obstacles
+        # Obstacles
         if not self.obstacles_positions:
-            # Générer obstacles uniquement la première fois
             for _ in range(random.randint(0, 3)):
                 w, h = random.choice([(60, 60), (40, 80), (80, 40)])
                 x = random.randint(WALL_THICKNESS + 50, screen_width - WALL_THICKNESS - w - 50)
                 y = random.randint(WALL_THICKNESS + 50, screen_height - WALL_THICKNESS - h - 50)
                 self.obstacles_positions.append((x, y, w, h))
-        # Recréer les obstacles à partir des positions mémorisées
         for x, y, w, h in self.obstacles_positions:
             self.obstacles.append(Obstacle(x, y, w, h))
 
-        # Génération des murs internes
+        # Murs internes
         if not self.internal_walls_positions:
-            # Générer murs internes uniquement la première fois
             for _ in range(random.randint(1, 3)):
                 vertical = random.choice([True, False])
                 if vertical:
@@ -132,18 +124,17 @@ class Room:
                     x = random.randint(WALL_THICKNESS + 50, screen_width - WALL_THICKNESS - w - 50)
                     y = random.randint(WALL_THICKNESS + 100, screen_height - WALL_THICKNESS - 100)
                 self.internal_walls_positions.append((x, y, w, h))
-        # Recréer les Rect des murs internes à partir des positions mémorisées
         for x, y, w, h in self.internal_walls_positions:
             self.internal_walls.append(pygame.Rect(x, y, w, h))
 
-        # Génération des coffres
+        # Coffres
         for _ in range(random.randint(0, 2)):
             size = 30
             x = random.randint(WALL_THICKNESS + 50, screen_width - WALL_THICKNESS - size - 50)
             y = random.randint(WALL_THICKNESS + 50, screen_height - WALL_THICKNESS - size - 50)
             self.chests.append(pygame.Rect(x, y, size, size))
 
-        # Génération des positions de médicaments uniquement la première fois
+        # Médicaments
         if not self.medicaments_positions:
             for _ in range(self.nb_medicaments):
                 while True:
@@ -151,7 +142,6 @@ class Room:
                     y = random.randint(WALL_THICKNESS + 20, screen_height - WALL_THICKNESS - 20)
                     new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
                     collision = False
-                    # Vérifie qu’un médicament ne spawn pas sur un mur interne ou un obstacle
                     for rect in self.internal_walls + [ob.rect for ob in self.obstacles]:
                         if new_rect.colliderect(rect):
                             collision = True
@@ -160,8 +150,6 @@ class Room:
                         break
                 self.medicaments_positions.append((x, y))
                 self.medicaments_state[(x, y)] = False
-
-        # Crée les objets Medicament à partir des positions et états mémorisés
         for pos in self.medicaments_positions:
             x, y = pos
             med = Medicament(x, y, player, screen_width, screen_height)
@@ -169,18 +157,12 @@ class Room:
             self.medicaments.append(med)
 
     def update_medicaments_state(self):
-        """
-        Met à jour l’état de collecte des médicaments pour conserver
-        cette information lors des passages dans la pièce.
-        """
+        """Met à jour l’état des médicaments collectés."""
         for med, pos in zip(self.medicaments, self.medicaments_positions):
             self.medicaments_state[pos] = med.collected
 
     def draw(self, surface):
-        """
-        Dessine toute la pièce sur la surface donnée : murs, portes,
-        murs internes, obstacles, coffres, ennemis et médicaments.
-        """
+        """Dessine toute la pièce."""
         surface.fill(self.color)
         surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
         for wall in self.walls:
@@ -199,10 +181,7 @@ class Room:
             med.draw(surface)
 
     def draw_contents(self, surface):
-        """
-        Dessine seulement le contenu dynamique de la pièce
-        (sans murs extérieurs et portes).
-        """
+        """Dessine le contenu dynamique seulement."""
         for rect in self.internal_walls:
             pygame.draw.rect(surface, (120, 120, 120), rect)
         for obst in self.obstacles:
