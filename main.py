@@ -1,4 +1,5 @@
 import pygame
+from enemy import Enemy
 from pygame.locals import *
 import sys
 from config import (
@@ -10,12 +11,12 @@ from config import (
 )
 from room import Room
 import random
+import math
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Isaac-like Base with Auto Walls, Doors & Minimap')
 clock = pygame.time.Clock()
-
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, screen_width, screen_height):
@@ -37,21 +38,25 @@ class Player(pygame.sprite.Sprite):
             dx = -self.speed
         if keys[K_RIGHT]:
             dx = self.speed
-
+        
         # Mouvement horizontal
         self.rect.x += dx
         for wall in walls:
             if self.rect.colliderect(wall):
-                if dx > 0: self.rect.right = wall.left
-                elif dx < 0: self.rect.left = wall.right
-
+                if dx > 0:
+                    self.rect.right = wall.left
+                elif dx < 0:
+                    self.rect.left = wall.right
+        
         # Mouvement vertical
         self.rect.y += dy
         for wall in walls:
             if self.rect.colliderect(wall):
-                if dy > 0: self.rect.bottom = wall.top
-                elif dy < 0: self.rect.top = wall.bottom
-
+                if dy > 0:
+                    self.rect.bottom = wall.top
+                elif dy < 0:
+                    self.rect.top = wall.bottom
+        
         # Limites écran
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
 
@@ -64,12 +69,10 @@ def draw_minimap(surface, grid, current_pos):
     min_r, max_r, min_c, max_c = min(rows), max(rows), min(cols), max(cols)
     width, height = (max_c - min_c + 1) * MINIMAP_SCALE, (max_r - min_r + 1) * MINIMAP_SCALE
     x_offset, y_offset = SCREEN_WIDTH - width - MINIMAP_MARGIN, MINIMAP_MARGIN
-
     for (r, c) in grid:
         x, y = x_offset + (c - min_c) * MINIMAP_SCALE, y_offset + (r - min_r) * MINIMAP_SCALE
         color = (255, 0, 0) if (r, c) == current_pos else (200, 200, 200)
         pygame.draw.rect(surface, color, (x, y, MINIMAP_SCALE - 2, MINIMAP_SCALE - 2))
-
 
 def draw_menu():
     screen.fill((30, 30, 30))
@@ -82,11 +85,14 @@ def draw_menu():
     pygame.display.flip()
     return [(play_btn, 280), (quit_btn, 380)]
 
-
 def menu_events(btns):
     for event in pygame.event.get():
-        if event.type == QUIT: pygame.quit(); sys.exit()
-        if event.type == KEYDOWN and event.key == K_ESCAPE: pygame.quit(); sys.exit()
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == KEYDOWN and event.key == K_ESCAPE:
+            pygame.quit()
+            sys.exit()
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             for i, (btn, y) in enumerate(btns):
@@ -100,23 +106,19 @@ def generate_random_grid(num_rooms=5):
     start = (0, 0)
     grid[start] = Room(start, random_color(), "Salle de départ")
     current_positions = [start]
-
     for i in range(1, num_rooms):
         base = random.choice(current_positions)
         r, c = base
         possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
         random.shuffle(possible)
-
         for pos in possible:
             if pos not in grid:
                 grid[pos] = Room(pos, random_color(), f"Salle {i+1}")
                 current_positions.append(pos)
                 break
-
     for room in grid.values():
         room.generate_walls_and_doors(grid)
     return grid
-
 
 def random_color():
     return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
@@ -126,21 +128,29 @@ def main():
     grid = generate_random_grid(num_rooms=5)
     current_pos, current_room = (0, 0), grid[(0, 0)]
     player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT)
-
+    enemy = Enemy(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4, player, SCREEN_WIDTH, SCREEN_HEIGHT)
+    current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
+    
     while True:
         if state == STATE_MENU:
             btns = draw_menu()
             action = menu_events(btns)
-            if action == 0: state = STATE_PLAY
-            elif action == 1: pygame.quit(); sys.exit()
-
+            if action == 0:
+                state = STATE_PLAY
+            elif action == 1:
+                pygame.quit()
+                sys.exit()
         elif state == STATE_PLAY:
             for event in pygame.event.get():
-                if event.type == QUIT: state = STATE_MENU
-                elif event.type == KEYDOWN and event.key == K_ESCAPE: state = STATE_MENU
-
-            player.update(pygame.key.get_pressed(), current_room.walls)
-
+                if event.type == QUIT:
+                    state = STATE_MENU
+                elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                    state = STATE_MENU
+            
+            keys = pygame.key.get_pressed()
+            player.update(keys, current_room.walls)
+            enemy.update(current_room.walls)
+            
             for direction, door in current_room.doors:
                 if player.rect.colliderect(door):
                     r, c = current_pos
@@ -148,22 +158,27 @@ def main():
                         'up': (r - 1, c), 'down': (r + 1, c),
                         'left': (r, c - 1), 'right': (r, c + 1)
                     }.get(direction, current_pos)
-
                     if new_pos in grid:
                         current_pos, current_room = new_pos, grid[new_pos]
-                        if direction == 'up': player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - WALL_THICKNESS - player.rect.height // 2)
-                        elif direction == 'down': player.rect.center = (SCREEN_WIDTH // 2, WALL_THICKNESS + player.rect.height // 2)
-                        elif direction == 'left': player.rect.center = (SCREEN_WIDTH - WALL_THICKNESS - player.rect.width // 2, SCREEN_HEIGHT // 2)
-                        elif direction == 'right': player.rect.center = (WALL_THICKNESS + player.rect.width // 2, SCREEN_HEIGHT // 2)
+                        if direction == 'up':
+                            player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - WALL_THICKNESS - player.rect.height // 2)
+                        elif direction == 'down':
+                            player.rect.center = (SCREEN_WIDTH // 2, WALL_THICKNESS + player.rect.height // 2)
+                        elif direction == 'left':
+                            player.rect.center = (SCREEN_WIDTH - WALL_THICKNESS - player.rect.width // 2, SCREEN_HEIGHT // 2)
+                        elif direction == 'right':
+                            player.rect.center = (WALL_THICKNESS + player.rect.width // 2, SCREEN_HEIGHT // 2)
                     break
-
+            
             current_room.draw(screen)
+            current_room.draw_contents(screen)
             screen.blit(player.surf, player.rect)
+            enemy.draw(screen)
             draw_minimap(screen, grid, current_pos)
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))
             pygame.display.flip()
             clock.tick(60)
 
-
 if __name__ == "__main__":
     main()
+
