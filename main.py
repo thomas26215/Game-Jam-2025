@@ -1,3 +1,4 @@
+# --- main.py corrigé ---
 import pygame
 from infos_hud import InfoHUD
 from enemy import Enemy
@@ -22,16 +23,12 @@ pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
 
 
-
-
 def draw_minimap(surface, grid, current_pos, visited_rooms):
     if not visited_rooms:
         return
-
     rows = [r for r, _ in visited_rooms]
     cols = [c for _, c in visited_rooms]
     min_r, max_r, min_c, max_c = min(rows), max(rows), min(cols), max(cols)
-
     width = (max_c - min_c + 1) * MINIMAP_SCALE
     height = (max_r - min_r + 1) * MINIMAP_SCALE
     x_offset, y_offset = SCREEN_WIDTH - width - MINIMAP_MARGIN, MINIMAP_MARGIN
@@ -39,7 +36,8 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
     # 🔹 Dessiner les connexions
     for (r, c) in visited_rooms:
         room = grid[(r, c)]
-        x, y = x_offset + (c - min_c) * MINIMAP_SCALE + MINIMAP_SCALE // 2, y_offset + (r - min_r) * MINIMAP_SCALE + MINIMAP_SCALE // 2
+        x, y = x_offset + (c - min_c) * MINIMAP_SCALE + MINIMAP_SCALE // 2, \
+               y_offset + (r - min_r) * MINIMAP_SCALE + MINIMAP_SCALE // 2
         for direction, _ in room.doors:
             dr, dc = {'up': (-1, 0), 'down': (1, 0), 'left': (0, -1), 'right': (0, 1)}[direction]
             neighbor = (r + dr, c + dc)
@@ -55,7 +53,7 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
         if (r, c) == current_pos:
             color = (255, 0, 0)  # salle actuelle
         elif getattr(room, "is_final", False):
-            color = (255, 255, 0)  # salle finale en jaune
+            color = (255, 255, 0)  # salle finale
         else:
             color = (200, 200, 200)  # salle normale
         pygame.draw.rect(surface, color, (x, y, MINIMAP_SCALE - 2, MINIMAP_SCALE - 2))
@@ -99,10 +97,8 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(enemy_room_pos, random_color(), "Salle des ennemis", nb_medicaments=0, nb_ennemis=2)
 
-    # 🔹 Positions adjacentes au départ interdites
     forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
     forbidden_positions.discard(enemy_room_pos)
-
     current_positions = [enemy_room_pos]
     for i in range(2, num_rooms):
         base = random.choice(current_positions)
@@ -115,22 +111,18 @@ def generate_random_grid(num_rooms=6):
                 current_positions.append(pos)
                 break
 
-    # 🔹 Choisir la salle la plus éloignée comme salle finale
     farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
     final_room.description = "Salle Finale"
-    final_room.is_final = True  # flag spécial
-
+    final_room.is_final = True
     total_meds = 30
     all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
     for _ in range(total_meds):
         room = random.choice(all_rooms_except_start)
         room.nb_medicaments += 1
-
     for room in grid.values():
         room.generate_walls_and_doors(grid)
-
     return grid
 
 
@@ -142,10 +134,13 @@ def main():
     state = STATE_MENU
     grid = generate_random_grid(num_rooms=10)
     current_pos, current_room = (0, 0), grid[(0, 0)]
-    player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT)
+    player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
+                    walk_spritesheet_path="player/idle.png",
+                    idle_spritesheet_path="player/idle.png",
+                    frame_width=64, frame_height=64)
+
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD()
-
     has_taken_first_med = False
     visited_rooms = set()
     visited_rooms.add(current_pos)
@@ -177,6 +172,7 @@ def main():
                     med.collect()
                     if current_pos == (0, 0):
                         has_taken_first_med = True
+
             current_room.update_medicaments_state()
 
             for direction, door in current_room.doors:
@@ -186,10 +182,8 @@ def main():
                         'up': (r - 1, c), 'down': (r + 1, c),
                         'left': (r, c - 1), 'right': (r, c + 1)
                     }.get(direction, current_pos)
-
                     if current_pos == (0, 0) and not has_taken_first_med:
                         break
-
                     if new_pos in grid:
                         current_pos, current_room = new_pos, grid[new_pos]
                         visited_rooms.add(current_pos)
@@ -206,16 +200,24 @@ def main():
 
             current_room.draw(screen)
             current_room.draw_contents(screen)
-            screen.blit(player.surf, player.rect)
+
+            # 🔹 Correction : utiliser player.image au lieu de player.surf
+            screen.blit(player.image, player.rect)
+
             for enemy in current_room.enemies:
                 enemy.draw(screen)
             for med in current_room.medicaments:
                 med.draw(screen)
-
             draw_minimap(screen, grid, current_pos, visited_rooms)
             hud.draw(screen)
-
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))
+
+            if current_pos == (0, 0) and not has_taken_first_med:
+                message = FONT.render("Récupérez le médicament pour continuer !", True, (255, 0, 0))
+                msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
+                msg_y = 20
+                screen.blit(message, (msg_x, msg_y))
+
             pygame.display.flip()
             clock.tick(60)
 
