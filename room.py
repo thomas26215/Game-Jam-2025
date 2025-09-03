@@ -162,7 +162,7 @@ class Room:
                 self.medicaments_state[(x, y)] = False
         for pos in self.medicaments_positions:
             x, y = pos
-            med = Medicament(x, y, player, screen_width, screen_height)
+            med = Medicament(x, y, player, screen_width, screen_height, spritesheet_path="potion/PotionBlue.png", frame_width=22, frame_height=37)
             med.collected = self.medicaments_state[pos]
             self.medicaments.append(med)
 
