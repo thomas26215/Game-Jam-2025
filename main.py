@@ -1,4 +1,4 @@
-# --- main.py corrigé avec barre de vie ---
+# --- main.py corrigé avec suppression murs ---
 import pygame
 from infos_hud import InfoHUD
 from enemy import Enemy
@@ -6,12 +6,10 @@ from medicament import Medicament
 from room import Room
 from player import Player
 import random
-import math
-from pygame.locals import *
 import sys
+from pygame.locals import *
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
-    WALL_THICKNESS, DOOR_SIZE,
     MINIMAP_SCALE, MINIMAP_MARGIN,
     STATE_MENU, STATE_PLAY,
     FONT
@@ -22,7 +20,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
 
-
+# --- fonctions utilitaires ---
 def draw_minimap(surface, grid, current_pos, visited_rooms):
     if not visited_rooms:
         return
@@ -120,7 +118,7 @@ def generate_random_grid(num_rooms=6):
         room = random.choice(all_rooms_except_start)
         room.nb_medicaments += 1
     for room in grid.values():
-        room.generate_walls_and_doors(grid)
+        room.generate_walls_and_doors(grid)  # les portes restent
     return grid
 
 
@@ -128,12 +126,12 @@ def random_color():
     return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
 
 
+# --- boucle principale ---
 def main():
     state = STATE_MENU
     grid = generate_random_grid(num_rooms=10)
     current_pos, current_room = (0, 0), grid[(0, 0)]
 
-    # Player avec animations
     player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
                     walk_spritesheet_path="player/walk.png",
                     idle_spritesheet_path="player/idle.png",
@@ -168,20 +166,16 @@ def main():
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     state = STATE_MENU
                 elif event.type == KEYDOWN and event.key == K_SPACE:
-                    player.attack()  # déclenche l'attaque
+                    player.attack()
 
             keys = pygame.key.get_pressed()
-            player.update(keys, current_room.walls)
+            player.update(keys)
 
-            # Mettre à jour les ennemis
+            # Mettre à jour les ennemis (plus de murs)
             for enemy in current_room.enemies:
-                enemy.update(current_room.walls)
-                # TODO: Gérer les collisions et les attaques
-                # Si le joueur attaque et touche un ennemi
-                #if player.attacking and player.rect.colliderect(enemy.rect):
-                #    enemy.take_damage(player.attack_power)
+                enemy.update()  # supprimer la référence à walls
 
-            # Médecaments
+            # Médicaments
             for med in current_room.medicaments:
                 med.update()
                 # Vérifier collision seulement si pas encore collecté
@@ -209,14 +203,8 @@ def main():
                         current_pos, current_room = new_pos, grid[new_pos]
                         visited_rooms.add(current_pos)
                         current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-                        if direction == 'up':
-                            player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - WALL_THICKNESS - player.rect.height // 2)
-                        elif direction == 'down':
-                            player.rect.center = (SCREEN_WIDTH // 2, WALL_THICKNESS + player.rect.height // 2)
-                        elif direction == 'left':
-                            player.rect.center = (SCREEN_WIDTH - WALL_THICKNESS - player.rect.width // 2, SCREEN_HEIGHT // 2)
-                        elif direction == 'right':
-                            player.rect.center = (WALL_THICKNESS + player.rect.width // 2, SCREEN_HEIGHT // 2)
+                        # repositionnement joueur simplifié
+                        player.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
                     break
 
             # Dessin
@@ -238,10 +226,8 @@ def main():
 
             draw_minimap(screen, grid, current_pos, visited_rooms)
 
-            # HUD avec barre de vie
-            hud.set_lives(player.health)  # synchroniser la barre avec le joueur
+            hud.set_lives(player.health)
             hud.draw(screen)
-
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)),
                         (10, SCREEN_HEIGHT - 50))
 

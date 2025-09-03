@@ -53,7 +53,7 @@ class Enemy(pygame.sprite.Sprite):
                 frames.append(sheet.subsurface(pygame.Rect(x, y, self.frame_width, self.frame_height)))
         return frames
 
-    def update(self, walls):
+    def update(self):
         dx = self.player.rect.centerx - self.rect.centerx
         dy = self.player.rect.centery - self.rect.centery
         distance = math.hypot(dx, dy)

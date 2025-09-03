@@ -64,7 +64,7 @@ class Player(pygame.sprite.Sprite):
         return frames
 
     def take_damage(self, amount):
-        if self.state != "dead" and self.state != "hurt":
+        if self.state not in ["dead", "hurt"]:
             self.health -= amount
             if self.health <= 0:
                 self.state = "dead"
@@ -81,12 +81,12 @@ class Player(pygame.sprite.Sprite):
             self.current_frame = 0
             self.last_attack_time = now
 
-    def update(self, keys, walls):
+    def update(self, keys):
         dx = dy = 0
         self.moving = False
 
         # --- Gestion attaque ---
-        if keys[K_SPACE]:
+        if keys[K_SPACE] or (self.joystick and self.joystick.get_button(1)):  # bouton droit manette
             self.attack()
 
         # Si attaque ou mort, le joueur ne bouge pas
@@ -95,7 +95,6 @@ class Player(pygame.sprite.Sprite):
             return
 
         # --- Clavier ---
-
         if keys[K_UP] or keys[K_z]:
             dy = -self.speed
             self.moving = True
@@ -111,7 +110,6 @@ class Player(pygame.sprite.Sprite):
             self.direction = "right"
             self.moving = True
 
-
         # --- Joystick ---
         if self.joystick:
             axis_x = self.joystick.get_axis(0)
@@ -125,17 +123,9 @@ class Player(pygame.sprite.Sprite):
                 dy = axis_y * self.speed
                 self.moving = True
 
-        # Déplacement et collisions
+        # Déplacement sans collision (plus de murs)
         self.rect.x += dx
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dx > 0: self.rect.right = wall.left
-                elif dx < 0: self.rect.left = wall.right
         self.rect.y += dy
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dy > 0: self.rect.bottom = wall.top
-                elif dy < 0: self.rect.top = wall.bottom
 
         # Limites écran
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
@@ -153,12 +143,10 @@ class Player(pygame.sprite.Sprite):
             frames = self.attack_frames
         elif self.state == "hurt":
             frames = self.hurt_frames
-            # Revenir à idle après 300ms
             if pygame.time.get_ticks() - self.hurt_timer > 300:
                 self.state = "idle"
                 self.current_frame = 0
         elif self.state == "dead":
-            # Choisir une des deux animations de mort
             frames = self.death_frames[0] if self.direction == "right" else self.death_frames[1]
         else:
             frames = self.idle_frames
@@ -169,7 +157,7 @@ class Player(pygame.sprite.Sprite):
                 if self.state == "attack":
                     self.state = "idle"
                 if self.state == "dead":
-                    self.current_frame = len(frames) - 1  # figer sur dernière frame
+                    self.current_frame = len(frames) - 1
                 else:
                     self.current_frame = 0
             frame = frames[int(self.current_frame)].copy()
