@@ -25,7 +25,7 @@ class Player(pygame.sprite.Sprite):
 
         # Animation
         self.current_frame = 0
-        self.animation_speed = 0.2
+        self.animation_speed = 0.1
 
         # Image initiale
         if self.idle_frames:
