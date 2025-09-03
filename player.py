@@ -95,20 +95,22 @@ class Player(pygame.sprite.Sprite):
             return
 
         # --- Clavier ---
-        if keys[K_UP]:
+
+        if keys[K_UP] or keys[K_z]:
             dy = -self.speed
             self.moving = True
-        if keys[K_DOWN]:
+        if keys[K_DOWN] or keys[K_s]:
             dy = self.speed
             self.moving = True
-        if keys[K_LEFT]:
+        if keys[K_LEFT] or keys[K_q]:
             dx = -self.speed
             self.direction = "left"
             self.moving = True
-        if keys[K_RIGHT]:
+        if keys[K_RIGHT] or keys[K_d]:
             dx = self.speed
             self.direction = "right"
             self.moving = True
+
 
         # --- Joystick ---
         if self.joystick:
