@@ -146,6 +146,10 @@ def main():
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD()
 
+    # AJOUT: Créer une surface pour l'effet d'ombre
+    shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    VISION_RADIUS = 200  # Rayon de vision du joueur
+
     has_taken_first_med = False
     visited_rooms = set()
     visited_rooms.add(current_pos)
@@ -204,22 +208,40 @@ def main():
                             player.rect.center = (WALL_THICKNESS + player.rect.width // 2, SCREEN_HEIGHT // 2)
                     break
 
+            # DESSIN DE LA SALLE ET DES ÉLÉMENTS
             current_room.draw(screen)
             current_room.draw_contents(screen)
-            screen.blit(player.surf, player.rect)
+            
+            # AJOUT: Dessiner les ennemis et médicaments avant l'effet d'ombre
             for enemy in current_room.enemies:
                 enemy.draw(screen)
             for med in current_room.medicaments:
                 med.draw(screen)
-
+            
+            
+            
+                        # Effet d'ombre : tout l'écran noir sauf le cercle de vision smooth
+            shadow_surface.fill((0, 0, 0, 255))  # Tout l'écran noir semi-transparent
+            
+                    # Dégradé radial : centre transparent, bord noir
+            for r in range(VISION_RADIUS, 0, -1):
+                t = r / VISION_RADIUS
+                alpha = int(220 * (1 - t**2))  # 0 au centre, 220 au bord
+                pygame.draw.circle(
+                    shadow_surface,
+                    (0, 0, 0, alpha),
+                    player.rect.center,
+                    r
+                )
+            
+            screen.blit(shadow_surface, (0, 0))
             draw_minimap(screen, grid, current_pos, visited_rooms)
             hud.draw(screen)
 
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))
             pygame.display.flip()
             clock.tick(60)
-
-
+            
 if __name__ == "__main__":
     main()
 
