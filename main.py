@@ -184,11 +184,14 @@ def main():
             # Médecaments
             for med in current_room.medicaments:
                 med.update()
-                if player.rect.colliderect(med.rect):
+                # Vérifier collision seulement si pas encore collecté
+                if not med.collected and player.rect.colliderect(med.rect):
                     med.collect()
                     hud.add_med()
                     if current_pos == (0, 0):
                         has_taken_first_med = True
+
+
 
             current_room.update_medicaments_state()
 
