@@ -7,7 +7,7 @@ class Enemy(pygame.sprite.Sprite):
                  walk_spritesheet_path, attack_spritesheet_path,
                  frame_width, frame_height,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
-                 attack_range=50):
+                 attack_range=50, attack_damage=10):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -18,6 +18,7 @@ class Enemy(pygame.sprite.Sprite):
         self.speed_close = speed_close
         self.speed_far = speed_far
         self.attack_range = attack_range
+        self.attack_damage = attack_damage
 
         # Charger les spritesheets
         self.walk_frames = self.load_frames(walk_spritesheet_path)
@@ -26,7 +27,7 @@ class Enemy(pygame.sprite.Sprite):
         # Animation
         self.current_frame = 0
         self.animation_speed = 0.2
-        self.attack_animation_speed = 0.1  # très lent
+        self.attack_animation_speed = 0.15
 
         # Image initiale
         self.image = self.walk_frames[0].copy()
@@ -38,8 +39,9 @@ class Enemy(pygame.sprite.Sprite):
         self.direction_timer = 0
 
         self.attacking = False
-        self.attack_in_progress = False  # nouvel indicateur
+        self.attack_in_progress = False
         self.direction = "right"
+        self.damage_applied = False  # pour ne pas infliger plusieurs fois les dégâts sur une attaque
 
     def load_frames(self, path):
         sheet = pygame.image.load(path).convert_alpha()
@@ -56,14 +58,15 @@ class Enemy(pygame.sprite.Sprite):
         dy = self.player.rect.centery - self.rect.centery
         distance = math.hypot(dx, dy)
 
-        # Détecter le début d'attaque
+        # Détecter l’attaque
         if distance <= self.attack_range and not self.attack_in_progress:
             self.attacking = True
             self.attack_in_progress = True
-            self.current_frame = 0  # recommence l’animation d’attaque
+            self.current_frame = 0
+            self.damage_applied = False  # prêt à infliger des dégâts
 
         if not self.attack_in_progress:
-            # Déplacement normal
+            # Déplacement vers le joueur ou aléatoire
             if distance < self.activation_distance:
                 speed = self.speed_close
                 dx_norm, dy_norm = (dx / distance, dy / distance) if distance != 0 else (0, 0)
@@ -84,18 +87,24 @@ class Enemy(pygame.sprite.Sprite):
             # Direction pour flip
             self.direction = "right" if dx >= 0 else "left"
 
-        # Choix des frames et vitesse
+        # Animation
         frames = self.attack_frames if self.attack_in_progress else self.walk_frames
         speed = self.attack_animation_speed if self.attack_in_progress else self.animation_speed
 
         if frames:
             self.current_frame += speed
+            # Infliger les dégâts au milieu de l’animation d’attaque
+            if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == len(frames)//2:
+                if self.rect.colliderect(self.player.rect):
+                    self.player.take_damage(self.attack_damage)
+                    self.damage_applied = True
+
             if self.current_frame >= len(frames):
                 if self.attack_in_progress:
-                    # Fin de l’attaque
                     self.attack_in_progress = False
                     self.attacking = False
                 self.current_frame = 0
+
             frame = frames[int(self.current_frame)].copy()
             if self.direction == "left":
                 frame = pygame.transform.flip(frame, True, False)

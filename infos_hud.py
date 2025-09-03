@@ -2,93 +2,66 @@ import pygame
 
 class InfoHUD:
     """
-    Classe représentant l'interface HUD (Head-Up Display) pour afficher les informations
-    du joueur telles que le nombre de vies restantes et les médicaments collectés.
+    Classe représentant l'interface HUD (Head-Up Display) pour afficher
+    les informations du joueur, comme la barre de vie et les médicaments collectés.
     """
 
-    def __init__(self, max_lives=3, current_lives=None):
+    def __init__(self, max_health=100, current_health=None):
         """
         Initialise l'HUD.
 
         Args:
-            max_lives (int): Nombre maximal de vies du joueur.
-            current_lives (int, optional): Nombre actuel de vies. Si None, on prend max_lives.
+            max_health (int): Santé maximale du joueur.
+            current_health (int, optional): Santé actuelle. Si None, prend max_health.
         """
-        self.max_lives = max_lives
-        self.lives_left = current_lives if current_lives is not None else max_lives
+        self.max_health = max_health
+        self.current_health = current_health if current_health is not None else max_health
         self.meds_collected = 0
 
-        # Couleurs des cœurs
-        self.heart_red = (220, 20, 60)    # cœur plein
-        self.heart_green = (50, 205, 50)  # cœur vide
-
-        # Police pour afficher le nombre de médicaments
+        # Couleurs
+        self.health_bg_color = (50, 50, 50)     # arrière-plan de la barre
+        self.health_fg_color = (220, 20, 60)    # barre de vie (rouge)
         self.font = pygame.font.SysFont(None, 32)
 
-    def set_lives(self, lives):
-        """
-        Définit directement le nombre de vies actuelles.
+        # Dimensions de la barre
+        self.bar_width = 200
+        self.bar_height = 25
+        self.bar_x = 30
+        self.bar_y = 30
 
-        Args:
-            lives (int): Nombre de vies du joueur (entre 0 et max_lives).
-        """
-        self.lives_left = max(0, min(lives, self.max_lives))
+    def set_health(self, health):
+        """Définit la santé actuelle (0 → max_health)."""
+        self.current_health = max(0, min(health, self.max_health))
 
-    def lose_life(self):
-        """
-        Diminue le nombre de vies de 1, si possible.
-        """
-        if self.lives_left > 0:
-            self.lives_left -= 1
+    def take_damage(self, amount):
+        """Inflige des dégâts au joueur."""
+        self.set_health(self.current_health - amount)
 
-    def gain_life(self):
-        """
-        Augmente le nombre de vies de 1, sans dépasser le maximum.
-        """
-        if self.lives_left < self.max_lives:
-            self.lives_left += 1
+    def heal(self, amount):
+        """Soigne le joueur."""
+        self.set_health(self.current_health + amount)
 
     def add_med(self):
-        """
-        Incrémente le compteur de médicaments collectés.
-        """
+        """Incrémente le compteur de médicaments collectés."""
         self.meds_collected += 1
 
     def draw(self, screen):
-        """
-        Dessine le HUD à l'écran.
+        """Dessine l'HUD."""
+        # Barre de fond
+        pygame.draw.rect(screen, self.health_bg_color,
+                         (self.bar_x, self.bar_y, self.bar_width, self.bar_height), border_radius=5)
 
-        Args:
-            screen (pygame.Surface): Surface sur laquelle dessiner le HUD.
-        """
-        # Dessin des cœurs représentant les vies
-        for i in range(self.max_lives):
-            # Si i < lives_left → cœur plein, sinon cœur vide
-            color = self.heart_red if i < self.lives_left else self.heart_green
-            self.draw_heart(screen, 30 + i * 40, 30, 30, color)
+        # Barre de vie proportionnelle
+        health_ratio = self.current_health / self.max_health
+        pygame.draw.rect(screen, self.health_fg_color,
+                         (self.bar_x, self.bar_y, int(self.bar_width * health_ratio), self.bar_height),
+                         border_radius=5)
 
-        # Affichage du nombre de médicaments collectés
+        # Contour de la barre
+        pygame.draw.rect(screen, (0, 0, 0),
+                         (self.bar_x, self.bar_y, self.bar_width, self.bar_height), 2, border_radius=5)
+
+        # Affichage des médicaments
         txt = self.font.render(f"Médicaments : {self.meds_collected}", True, (10, 10, 10))
-        screen.blit(txt, (30, 70))
-
-    def draw_heart(self, surface, x, y, size, color):
-        """
-        Dessine un cœur stylisé à une position donnée.
-
-        Args:
-            surface (pygame.Surface): Surface sur laquelle dessiner.
-            x (int): Coordonnée x du centre du cœur.
-            y (int): Coordonnée y du centre du cœur.
-            size (int): Taille globale du cœur.
-            color (tuple): Couleur du cœur (R, G, B).
-        """
-        r = size // 2
-
-        # Dessiner les deux cercles supérieurs du cœur
-        pygame.draw.circle(surface, color, (x - r // 2, y), r // 2)
-        pygame.draw.circle(surface, color, (x + r // 2, y), r // 2)
-
-        # Dessiner le triangle inférieur du cœur
-        points = [(x - r, y), (x + r, y), (x, y + r + 6)]
-        pygame.draw.polygon(surface, color, points)
+        screen.blit(txt, (self.bar_x, self.bar_y + self.bar_height + 10))
 
