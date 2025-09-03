@@ -1,4 +1,4 @@
-# --- main.py corrigé avec suppression murs ---
+# --- main.py avec gestion complète des menus ---
 import pygame
 from infos_hud import InfoHUD
 from enemy import Enemy
@@ -11,7 +11,7 @@ from pygame.locals import *
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
     MINIMAP_SCALE, MINIMAP_MARGIN,
-    STATE_MENU, STATE_PLAY,
+    STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
 
@@ -19,6 +19,45 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
+
+# --- Classes pour la gestion des menus ---
+class Menu:
+    def __init__(self):
+        self.buttons = []
+        self.current_selection = 0
+        
+    def add_button(self, text, action):
+        button_surface = FONT.render(text, True, (255, 255, 255))
+        self.buttons.append({"text": text, "surface": button_surface, "action": action})
+    
+    def draw(self, surface):
+        surface.fill((30, 30, 30))
+        title = FONT.render("Contagium", True, (255, 255, 0))
+        surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
+        
+        for i, button in enumerate(self.buttons):
+            color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
+            button_surface = FONT.render(button["text"], True, color)
+            y_pos = 280 + i * 100
+            surface.blit(button_surface, (SCREEN_WIDTH // 2 - button_surface.get_width() // 2, y_pos))
+    
+    def handle_event(self, event):
+        if event.type == KEYDOWN:
+            if event.key == K_UP:
+                self.current_selection = (self.current_selection - 1) % len(self.buttons)
+            elif event.key == K_DOWN:
+                self.current_selection = (self.current_selection + 1) % len(self.buttons)
+            elif event.key == K_RETURN:
+                return self.buttons[self.current_selection]["action"]
+        elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            for i, button in enumerate(self.buttons):
+                button_surface = button["surface"]
+                bx = SCREEN_WIDTH // 2 - button_surface.get_width() // 2
+                by = 280 + i * 100
+                if bx < mx < bx + button_surface.get_width() and by < my < by + button_surface.get_height():
+                    return button["action"]
+        return None
 
 # --- fonctions utilitaires ---
 def draw_minimap(surface, grid, current_pos, visited_rooms):
@@ -221,52 +260,120 @@ def random_color():
     return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
 
 
+def init_menus():
+    main_menu = Menu()
+    main_menu.add_button("Jouer", STATE_PLAY)
+    main_menu.add_button("Options", STATE_OPTIONS)
+    main_menu.add_button("Quitter", "QUIT")
+    
+    pause_menu = Menu()
+    pause_menu.add_button("Reprendre", STATE_PLAY)
+    pause_menu.add_button("Options", STATE_OPTIONS)
+    pause_menu.add_button("Menu Principal", STATE_MENU)
+    pause_menu.add_button("Quitter", "QUIT")
+    
+    options_menu = Menu()
+    options_menu.add_button("Retour", "BACK")
+    
+    game_over_menu = Menu()
+    game_over_menu.add_button("Rejouer", STATE_PLAY)
+    game_over_menu.add_button("Menu Principal", STATE_MENU)
+    game_over_menu.add_button("Quitter", "QUIT")
+    
+    return {
+        STATE_MENU: main_menu,
+        STATE_PAUSE: pause_menu,
+        STATE_OPTIONS: options_menu,
+        STATE_GAME_OVER: game_over_menu
+    }
+
+
 # --- boucle principale ---
 def main():
     state = STATE_MENU
-    grid = generate_random_grid(num_rooms=10)
-    current_pos, current_room = (0, 0), grid[(0, 0)]
+    menus = init_menus()
+    
+    # Initialisation des variables de jeu
+    grid = None
+    current_pos = None
+    current_room = None
+    player = None
+    hud = None
+    shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    VISION_RADIUS = 300
+    has_taken_first_med = False
+    visited_rooms = set()
+    
+    # Initialisation du jeu
+    def init_game():
+        nonlocal grid, current_pos, current_room, player, hud, has_taken_first_med, visited_rooms
+        
+        grid = generate_random_grid(num_rooms=10)
+        current_pos, current_room = (0, 0), grid[(0, 0)]
 
-    player = Player(
-        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT,
-        walk_spritesheet_path="player/walk.png",
-        idle_spritesheet_path="player/idle.png",
-        attack_spritesheet_path="player/attack.png",
-        hurt_spritesheet_path="player/damage.png",
-        death_spritesheets=["player/death1.png", "player/death2.png"],
-        frame_width=64, frame_height=64
-    )
+        player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
+                        walk_spritesheet_path="player/walk.png",
+                        idle_spritesheet_path="player/idle.png",
+                        attack_spritesheet_path="player/attack.png",
+                        hurt_spritesheet_path="player/damage.png",
+                        death_spritesheets=["player/death1.png", "player/death2.png"],
+                        frame_width=64, frame_height=64)
 
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD(max_lives=3, current_lives=3)
     hud.set_poisoned(True)
 
-    shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    VISION_RADIUS = 300
-    has_taken_first_med = False
-    visited_rooms = set()
-    visited_rooms.add(current_pos)
-
-    while True:
-        if state == STATE_MENU:
-            btns = draw_menu()
-            action = menu_events(btns)
-            if action == 0:
-                state = STATE_PLAY
-            elif action == 1:
-                pygame.quit()
-                sys.exit()
-
+        has_taken_first_med = False
+        visited_rooms = set()
+        visited_rooms.add(current_pos)
+    
+    running = True
+    while running:
+        # Gestion des menus
+        if state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
+            # Dessiner le menu approprié
+            menus[state].draw(screen)
+            pygame.display.flip()
+            
+            # Gérer les événements du menu
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                    break
+                
+                action = menus[state].handle_event(event)
+                if action == "QUIT":
+                    running = False
+                    break
+                elif action == "BACK":
+                    # Retour au menu précédent
+                    if state == STATE_OPTIONS:
+                        state = STATE_MENU
+                elif action is not None:
+                    if action == STATE_PLAY and state == STATE_MENU:
+                        # Nouvelle partie
+                        init_game()
+                    elif action == STATE_PLAY and state == STATE_GAME_OVER:
+                        # Recommencer après un game over
+                        init_game()
+                    state = action
+        
+        # État de jeu normal
         elif state == STATE_PLAY:
             # --- Gestion des événements ---
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    state = STATE_MENU
+                    running = False
+                    break
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                    state = STATE_MENU
+                    state = STATE_PAUSE
                 elif event.type == KEYDOWN and event.key == K_SPACE:
                     player.attack()
-
+            
+            if not running:
+                break
+                
+            # Mise à jour du jeu
             keys = pygame.key.get_pressed()
             player.update(keys)
 
@@ -358,7 +465,8 @@ def main():
             pygame.display.flip()
             clock.tick(60)
 
+    pygame.quit()
+    sys.exit()
 
 if __name__ == "__main__":
     main()
-
