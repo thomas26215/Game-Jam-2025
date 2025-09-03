@@ -168,7 +168,7 @@ def main():
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     state = STATE_MENU
                 elif event.type == KEYDOWN and event.key == K_SPACE:
-                    player.start_attack()  # déclenche l'attaque
+                    player.attack()  # déclenche l'attaque
 
             keys = pygame.key.get_pressed()
             player.update(keys, current_room.walls)
