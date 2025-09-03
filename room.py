@@ -95,7 +95,7 @@ class Room:
                 new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
                 if not any(new_rect.colliderect(door.inflate(50, 50)) for door in door_areas):
                     break
-            self.enemies.append(Enemy(x, y, player, screen_width, screen_height))
+            self.enemies.append(Enemy(x, y, player, screen_width, screen_height, "zombies/Zombie_1/Walk.png", 128, 128))
 
         # Obstacles
         if not self.obstacles_positions:

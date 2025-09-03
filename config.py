@@ -3,6 +3,7 @@ import pygame
 # Écran
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 700
+HEAD_BAR_HEIGHT = 100
 
 # Mur et portes
 WALL_THICKNESS = 20
