@@ -7,7 +7,7 @@ class Enemy(pygame.sprite.Sprite):
                  walk_spritesheet_path, attack_spritesheet_path,
                  frame_width, frame_height,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
-                 attack_range=50, attack_damage=1):
+                 attack_range=1, attack_damage=1):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -93,9 +93,19 @@ class Enemy(pygame.sprite.Sprite):
 
         if frames:
             self.current_frame += speed
+
             # Infliger les dégâts au milieu de l’animation d’attaque
-            if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == len(frames)//2:
-                if self.rect.colliderect(self.player.rect):
+            if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == 3:
+                attack_hitbox = self.rect.copy()
+                attack_hitbox.width = self.rect.width // 3
+                attack_hitbox.height = self.rect.height // 2
+                if self.direction == "right":
+                    attack_hitbox.x += self.rect.width // 2
+                else:
+                    attack_hitbox.x -= self.rect.width // 2
+                # Optionnel : décaler verticalement si nécessaire
+                attack_hitbox.y += self.rect.height // 4
+                if attack_hitbox.colliderect(self.player.rect):
                     self.player.take_damage(self.attack_damage)
                     self.damage_applied = True
 
