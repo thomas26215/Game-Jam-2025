@@ -38,8 +38,14 @@ class Player(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect(center=(x, y))
 
-    def load_frames(self, path, frame_width, frame_height):
-        """Découpe un spritesheet en frames."""
+        # Initialiser joystick
+        pygame.joystick.init()
+        self.joystick = None
+        if pygame.joystick.get_count() > 0:
+            self.joystick = pygame.joystick.Joystick(0)
+            self.joystick.init()
+    
+    def load_frames(self, path, frame_width, frame_height, scale=2):
         sheet = pygame.image.load(path).convert_alpha()
         frames = []
         sheet_width = sheet.get_width()
@@ -47,13 +53,17 @@ class Player(pygame.sprite.Sprite):
         for y in range(0, sheet_height, frame_height):
             for x in range(0, sheet_width, frame_width):
                 frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+                # Redimensionner le frame
+                frame = pygame.transform.scale(frame, (frame_width*scale, frame_height*scale))
                 frames.append(frame)
         return frames
+
 
     def update(self, keys, walls):
         dx = dy = 0
         self.moving = False
 
+        # ----- Clavier -----
         if keys[K_UP]:
             dy = -self.speed
             self.moving = True
@@ -68,6 +78,19 @@ class Player(pygame.sprite.Sprite):
             dx = self.speed
             self.direction = "right"
             self.moving = True
+
+        # ----- Manette (joystick) -----
+        if self.joystick:
+            axis_x = self.joystick.get_axis(0)  # gauche/droite
+            axis_y = self.joystick.get_axis(1)  # haut/bas
+            deadzone = 0.2  # éviter les mouvements involontaires
+            if abs(axis_x) > deadzone:
+                dx = axis_x * self.speed
+                self.direction = "right" if dx > 0 else "left"
+                self.moving = True
+            if abs(axis_y) > deadzone:
+                dy = axis_y * self.speed
+                self.moving = True
 
         # Déplacement horizontal
         self.rect.x += dx
