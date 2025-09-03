@@ -37,6 +37,7 @@ class Room:
         # Portes et ennemis
         self.doors = []
         self.enemies = []
+        self.enemies_data = []  # <-- garde les infos pour reload
 
         # Médicaments
         self.nb_medicaments = nb_medicaments
@@ -82,31 +83,44 @@ class Room:
         self.enemies.clear()
         self.medicaments.clear()
 
-        if self.nb_enemies_in_room is None:
-            self.nb_enemies_in_room = random.randint(1, 4)
-
         door_areas = [door for _, door in self.doors]
 
-        # Génération des ennemis
-        for _ in range(self.nb_enemies_in_room):
-            while True:
-                x = random.randint(50, screen_width - 50)
-                y = random.randint(50, screen_height - 50)
-                new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
-                collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
-                if not collision:
-                    break
-            self.enemies.append(
-                Enemy(x, y, player, screen_width, screen_height,
-                      walk_spritesheet_path="zombies/Zombie_1/Walk.png",
-                      attack_spritesheet_path="zombies/Zombie_1/Attack.png",
-                      frame_width=128, frame_height=128,
-                      activation_distance=200,
-                      speed_close=1.5, speed_far=0.75,
-                      attack_range=50)
-            )
+        # --- Génération des ennemis ---
+        if not self.enemies_data:  # première fois
+            if self.nb_enemies_in_room is None:
+                self.nb_enemies_in_room = random.randint(1, 4)
 
-        # Génération des médicaments
+            for _ in range(self.nb_enemies_in_room):
+                while True:
+                    x = random.randint(50, screen_width - 50)
+                    y = random.randint(50, screen_height - 50)
+                    new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
+                    collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
+                    if not collision:
+                        break
+                # Choix aléatoire du zombie
+                zombie_number = random.randint(1, 4)
+                self.enemies_data.append({
+                    "x": x,
+                    "y": y,
+                    "folder": f"zombies/Zombie_{zombie_number}"
+                })
+
+        # Création des ennemis à partir de self.enemies_data
+        for data in self.enemies_data:
+            folder = data["folder"]
+            enemy = Enemy(
+                data["x"], data["y"], player, screen_width, screen_height,
+                walk_spritesheet_path=f"{folder}/Walk.png",
+                attack_spritesheet_path=f"{folder}/Attack.png",
+                frame_width=128, frame_height=128,
+                activation_distance=200,
+                speed_close=1.5, speed_far=0.75,
+                attack_range=50
+            )
+            self.enemies.append(enemy)
+
+        # --- Génération des médicaments ---
         if not self.medicaments_positions:
             for _ in range(self.nb_medicaments):
                 while True:
@@ -137,15 +151,12 @@ class Room:
             for layer in tmx_data.visible_layers:
                 if hasattr(layer, 'tiles'):
                     for x, y, gid in layer.tiles():
-                        # --- Correction: gid peut déjà être une Surface ---
                         if isinstance(gid, pygame.Surface):
                             tile = gid
                         else:
                             tile = tmx_data.get_tile_image_by_gid(gid)
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
-                            # Debug tile
-                            # print(f"Tile at ({x},{y}) drawn.")
 
         # Dessin de la salle (nom)
         surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))

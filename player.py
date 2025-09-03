@@ -86,10 +86,10 @@ class Player(pygame.sprite.Sprite):
         self.moving = False
 
         # --- Gestion attaque ---
-        if keys[K_SPACE] or (self.joystick and self.joystick.get_button(1)):  # bouton droit manette
+        if keys[K_SPACE] or (self.joystick and self.joystick.get_button(1)):
             self.attack()
 
-        # Si attaque ou mort, le joueur ne bouge pas
+        # Si attaque, hurt ou dead, le joueur ne bouge pas
         if self.state in ["attack", "hurt", "dead"]:
             self.animate()
             return
@@ -123,11 +123,9 @@ class Player(pygame.sprite.Sprite):
                 dy = axis_y * self.speed
                 self.moving = True
 
-        # Déplacement sans collision (plus de murs)
+        # Déplacement
         self.rect.x += dx
         self.rect.y += dy
-
-        # Limites écran
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
 
         # Animation selon mouvement
@@ -135,6 +133,7 @@ class Player(pygame.sprite.Sprite):
         self.animate()
 
     def animate(self):
+        # Choix des frames selon l'état
         if self.state == "idle":
             frames = self.idle_frames
         elif self.state == "walk":
@@ -151,19 +150,32 @@ class Player(pygame.sprite.Sprite):
         else:
             frames = self.idle_frames
 
-        if frames:
+        if not frames:
+            return
+
+        # Animation avec gestion de la dernière frame d'attaque
+        if self.state == "attack":
+            if int(self.current_frame) >= len(frames) - 1:
+                self.image = frames[-1].copy()
+                if self.direction == "left":
+                    self.image = pygame.transform.flip(self.image, True, False)
+                self.current_frame = 0
+                self.state = "idle"
+            else:
+                self.image = frames[int(self.current_frame)].copy()
+                if self.direction == "left":
+                    self.image = pygame.transform.flip(self.image, True, False)
+                self.current_frame += self.animation_speed
+        else:
+            self.image = frames[int(self.current_frame)].copy()
+            if self.direction == "left":
+                self.image = pygame.transform.flip(self.image, True, False)
             self.current_frame += self.animation_speed
             if self.current_frame >= len(frames):
-                if self.state == "attack":
-                    self.state = "idle"
                 if self.state == "dead":
                     self.current_frame = len(frames) - 1
                 else:
                     self.current_frame = 0
-            frame = frames[int(self.current_frame)].copy()
-            if self.direction == "left":
-                frame = pygame.transform.flip(frame, True, False)
-            self.image = frame
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
