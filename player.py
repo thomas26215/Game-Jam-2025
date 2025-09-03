@@ -8,7 +8,7 @@ class Player(pygame.sprite.Sprite):
         self.surf = pygame.Surface((50, 50))
         self.surf.fill((0, 128, 255))
         self.rect = self.surf.get_rect(center=(x, y))
-        self.speed = 5
+        self.speed = 3.5
         self.screen_width = screen_width
         self.screen_height = screen_height
 
