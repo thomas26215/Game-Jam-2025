@@ -134,10 +134,18 @@ def main():
     state = STATE_MENU
     grid = generate_random_grid(num_rooms=10)
     current_pos, current_room = (0, 0), grid[(0, 0)]
-    player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
-                    walk_spritesheet_path="player/idle.png",
-                    idle_spritesheet_path="player/idle.png",
-                    frame_width=64, frame_height=64)
+    player = Player(
+        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2,
+        SCREEN_WIDTH, SCREEN_HEIGHT,
+        walk_spritesheet_path="player/walk.png",
+        idle_spritesheet_path="player/idle.png",
+        attack_spritesheet_path="player/attack.png",
+        hurt_spritesheet_path="player/damage.png",
+        death1_spritesheet_path="player/death1.png",
+        death2_spritesheet_path="player/death2.png",
+        frame_width=64, frame_height=64
+    )
+
 
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD()
