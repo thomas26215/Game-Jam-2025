@@ -204,7 +204,15 @@ def main():
                         visited_rooms.add(current_pos)
                         current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
                         # repositionnement joueur simplifié
-                        player.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+                        #player.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+                        if direction == 'up':
+                            player.rect.bottom = SCREEN_HEIGHT - 60
+                        elif direction == 'down':
+                            player.rect.top = 60
+                        elif direction == 'left':
+                            player.rect.right = SCREEN_WIDTH - 60
+                        elif direction == 'right':
+                            player.rect.left = 60
                     break
 
             # Dessin

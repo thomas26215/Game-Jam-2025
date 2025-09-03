@@ -121,7 +121,6 @@ class Room:
 
     def draw(self, surface):
         """Dessine toute la pièce."""
-        surface.fill(self.color)
         surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0), door)
