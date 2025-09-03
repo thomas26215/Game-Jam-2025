@@ -1,6 +1,11 @@
 import pygame
+from infos_hud import InfoHUD
 from enemy import Enemy
 from medicament import Medicament
+from room import Room
+from player import Player
+import random
+import math
 from pygame.locals import *
 import sys
 from config import (
@@ -10,9 +15,6 @@ from config import (
     STATE_MENU, STATE_PLAY,
     FONT
 )
-from room import Room
-import random
-import math
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -20,44 +22,6 @@ pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, screen_width, screen_height):
-        super().__init__()
-        self.surf = pygame.Surface((50, 50))
-        self.surf.fill((0, 128, 255))
-        self.rect = self.surf.get_rect(center=(x, y))
-        self.speed = 5
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-
-    def update(self, keys, walls):
-        dx = dy = 0
-        if keys[K_UP]:
-            dy = -self.speed
-        if keys[K_DOWN]:
-            dy = self.speed
-        if keys[K_LEFT]:
-            dx = -self.speed
-        if keys[K_RIGHT]:
-            dx = self.speed
-
-        self.rect.x += dx
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dx > 0:
-                    self.rect.right = wall.left
-                elif dx < 0:
-                    self.rect.left = wall.right
-
-        self.rect.y += dy
-        for wall in walls:
-            if self.rect.colliderect(wall):
-                if dy > 0:
-                    self.rect.bottom = wall.top
-                elif dy < 0:
-                    self.rect.top = wall.bottom
-
-        self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
 
 
 def draw_minimap(surface, grid, current_pos, visited_rooms):
@@ -86,8 +50,14 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
 
     # 🔹 Dessiner les salles
     for (r, c) in visited_rooms:
+        room = grid[(r, c)]
         x, y = x_offset + (c - min_c) * MINIMAP_SCALE, y_offset + (r - min_r) * MINIMAP_SCALE
-        color = (255, 0, 0) if (r, c) == current_pos else (200, 200, 200)
+        if (r, c) == current_pos:
+            color = (255, 0, 0)  # salle actuelle
+        elif getattr(room, "is_final", False):
+            color = (255, 255, 0)  # salle finale en jaune
+        else:
+            color = (200, 200, 200)  # salle normale
         pygame.draw.rect(surface, color, (x, y, MINIMAP_SCALE - 2, MINIMAP_SCALE - 2))
 
 
@@ -120,7 +90,7 @@ def menu_events(btns):
     return None
 
 
-def generate_random_grid(num_rooms=8):
+def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
     grid[start] = Room(start, random_color(), "Salle de départ", nb_medicaments=1, nb_ennemis=0)
@@ -129,6 +99,10 @@ def generate_random_grid(num_rooms=8):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(enemy_room_pos, random_color(), "Salle des ennemis", nb_medicaments=0, nb_ennemis=2)
 
+    # 🔹 Positions adjacentes au départ interdites
+    forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
+    forbidden_positions.discard(enemy_room_pos)
+
     current_positions = [enemy_room_pos]
     for i in range(2, num_rooms):
         base = random.choice(current_positions)
@@ -136,10 +110,17 @@ def generate_random_grid(num_rooms=8):
         possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
         random.shuffle(possible)
         for pos in possible:
-            if pos not in grid:
+            if pos not in grid and pos not in forbidden_positions:
                 grid[pos] = Room(pos, random_color(), f"Salle {i+1}", nb_medicaments=0)
                 current_positions.append(pos)
                 break
+
+    # 🔹 Choisir la salle la plus éloignée comme salle finale
+    farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
+    final_room = grid[farthest_pos]
+    final_room.nb_enemies_in_room = 8
+    final_room.description = "Salle Finale"
+    final_room.is_final = True  # flag spécial
 
     total_meds = 30
     all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
@@ -163,6 +144,7 @@ def main():
     current_pos, current_room = (0, 0), grid[(0, 0)]
     player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT)
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
+    hud = InfoHUD()
 
     has_taken_first_med = False
     visited_rooms = set()
@@ -231,6 +213,7 @@ def main():
                 med.draw(screen)
 
             draw_minimap(screen, grid, current_pos, visited_rooms)
+            hud.draw(screen)
 
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))
             pygame.display.flip()

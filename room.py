@@ -21,7 +21,6 @@ class Room:
         self.enemies = []        # Ennemis
         self.obstacles = []      # Obstacles
         self.internal_walls = [] # Murs internes
-        self.chests = []         # Coffres
 
         # Médicaments
         self.nb_medicaments = nb_medicaments
@@ -79,7 +78,6 @@ class Room:
         """
         self.internal_walls.clear()
         self.obstacles.clear()
-        self.chests.clear()
         self.medicaments.clear()
 
         # Définir nb ennemis si pas encore fait
@@ -132,7 +130,6 @@ class Room:
             size = 30
             x = random.randint(WALL_THICKNESS + 50, screen_width - WALL_THICKNESS - size - 50)
             y = random.randint(WALL_THICKNESS + 50, screen_height - WALL_THICKNESS - size - 50)
-            self.chests.append(pygame.Rect(x, y, size, size))
 
         # Médicaments
         if not self.medicaments_positions:
@@ -173,8 +170,6 @@ class Room:
             pygame.draw.rect(surface, (120, 120, 120), rect)
         for obst in self.obstacles:
             obst.draw(surface)
-        for chest in self.chests:
-            pygame.draw.rect(surface, (255, 215, 0), chest)
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:
@@ -186,8 +181,6 @@ class Room:
             pygame.draw.rect(surface, (120, 120, 120), rect)
         for obst in self.obstacles:
             obst.draw(surface)
-        for chest in self.chests:
-            pygame.draw.rect(surface, (255, 215, 0), chest)
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:
