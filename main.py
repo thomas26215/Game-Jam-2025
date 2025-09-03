@@ -89,7 +89,7 @@ def generate_random_grid(num_rooms=6):
     # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
-        tmx_file="maps/First_map.tmx",
+        tmx_file="maps/right.tmx", 
         color=random_color(),
         description="Salle de départ",
         nb_medicaments=1,
@@ -101,7 +101,7 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
-        tmx_file=None,
+        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle des ennemis",
         nb_medicaments=0,
@@ -121,7 +121,7 @@ def generate_random_grid(num_rooms=6):
             if pos not in grid and pos not in forbidden_positions:
                 grid[pos] = Room(
                     position=pos,
-                    tmx_file=None,
+                    tmx_file="maps/right.tmx",
                     color=random_color(),
                     description=f"Salle {i+1}",
                     nb_medicaments=0
@@ -156,7 +156,7 @@ def generate_random_grid(num_rooms=6):
     # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
-        tmx_file=None,
+        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle de départ",
         nb_medicaments=1,
@@ -168,7 +168,7 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
-        tmx_file=None,
+        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle des ennemis",
         nb_medicaments=0,
@@ -243,8 +243,6 @@ def main():
     has_taken_first_med = False
     visited_rooms = set()
     visited_rooms.add(current_pos)
-
-    """
 
     while True:
         if state == STATE_MENU:
@@ -344,13 +342,6 @@ def main():
 
             pygame.display.flip()
             clock.tick(60)
-
-    """
-
-    room = Room(position=(0,0), tmx_file="maps/First_map.tmx")
-    screen.fill((0,0,0))
-    room.draw(screen)
-    pygame.display.flip()
 
 
 if __name__ == "__main__":

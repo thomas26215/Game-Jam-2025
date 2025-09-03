@@ -8,10 +8,13 @@ from medicament import Medicament
 class MapLoader:
     """Charge un fichier TMX et extrait les obstacles."""
     def __init__(self, tmx_file):
+        print(f"Loading TMX file: {tmx_file}")
         self.tmx_data = pytmx.load_pygame(tmx_file)
+        print(f"Map size: {self.tmx_data.width}x{self.tmx_data.height} tiles")
         self.width = self.tmx_data.width * self.tmx_data.tilewidth
         self.height = self.tmx_data.height * self.tmx_data.tileheight
         self.obstacles = self._load_obstacles()
+        print(f"Loaded {len(self.obstacles)} obstacles from TMX.")
 
     def _load_obstacles(self):
         obstacles = []
@@ -26,9 +29,11 @@ class Room:
     def __init__(self, position, tmx_file=None, color=(50, 50, 50), description="Salle",
                  nb_medicaments=10, nb_ennemis=None):
         self.position = position
+        print("Room position:", position)
+        print("tmx_file:", tmx_file)
         self.color = color
         self.description = description
-        
+
         # Portes et ennemis
         self.doors = []
         self.enemies = []
@@ -126,15 +131,21 @@ class Room:
             self.medicaments_state[pos] = med.collected
 
     def draw(self, surface):
-        # --- Dessin de la map TMX ---
+        """Dessine la salle et la map TMX, en gérant gid déjà Surface."""
         if self.map_loader is not None:
             tmx_data = self.map_loader.tmx_data
             for layer in tmx_data.visible_layers:
                 if hasattr(layer, 'tiles'):
                     for x, y, gid in layer.tiles():
-                        tile = tmx_data.get_tile_image_by_gid(gid)
+                        # --- Correction: gid peut déjà être une Surface ---
+                        if isinstance(gid, pygame.Surface):
+                            tile = gid
+                        else:
+                            tile = tmx_data.get_tile_image_by_gid(gid)
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
+                            # Debug tile
+                            # print(f"Tile at ({x},{y}) drawn.")
 
         # Dessin de la salle (nom)
         surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
