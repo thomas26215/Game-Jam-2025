@@ -143,7 +143,7 @@ def main():
                     frame_width=64, frame_height=64)
 
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-    hud = InfoHUD(max_health=100, current_health=100)
+    hud = InfoHUD(max_lives=3, current_lives=3)
 
     shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     VISION_RADIUS = 300
@@ -236,7 +236,7 @@ def main():
             draw_minimap(screen, grid, current_pos, visited_rooms)
 
             # HUD avec barre de vie
-            hud.set_health(player.health)  # synchroniser la barre avec le joueur
+            hud.set_lives(player.health)  # synchroniser la barre avec le joueur
             hud.draw(screen)
 
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)),

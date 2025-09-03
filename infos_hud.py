@@ -3,65 +3,63 @@ import pygame
 class InfoHUD:
     """
     Classe représentant l'interface HUD (Head-Up Display) pour afficher
-    les informations du joueur, comme la barre de vie et les médicaments collectés.
+    les informations du joueur, comme les vies (cœurs) et les médicaments collectés.
     """
 
-    def __init__(self, max_health=100, current_health=None):
+    def __init__(self, max_lives=5, current_lives=None):
         """
         Initialise l'HUD.
 
         Args:
-            max_health (int): Santé maximale du joueur.
-            current_health (int, optional): Santé actuelle. Si None, prend max_health.
+            max_lives (int): Nombre maximal de vies du joueur.
+            current_lives (int, optional): Vies actuelles. Si None, prend max_lives.
         """
-        self.max_health = max_health
-        self.current_health = current_health if current_health is not None else max_health
+        self.max_lives = max_lives
+        self.lives_left = current_lives if current_lives is not None else max_lives
         self.meds_collected = 0
 
-        # Couleurs
-        self.health_bg_color = (50, 50, 50)     # arrière-plan de la barre
-        self.health_fg_color = (220, 20, 60)    # barre de vie (rouge)
+        # Couleurs des cœurs
+        self.heart_full_color = (220, 20, 60)    # cœur plein (rouge)
+        self.heart_empty_color = (50, 205, 50)   # cœur vide (vert)
+
+        # Police pour afficher les médicaments
         self.font = pygame.font.SysFont(None, 32)
 
-        # Dimensions de la barre
-        self.bar_width = 200
-        self.bar_height = 25
-        self.bar_x = 30
-        self.bar_y = 30
+    def set_lives(self, lives):
+        """Définit directement le nombre de vies actuelles."""
+        self.lives_left = max(0, min(lives, self.max_lives))
 
-    def set_health(self, health):
-        """Définit la santé actuelle (0 → max_health)."""
-        self.current_health = max(0, min(health, self.max_health))
+    def lose_life(self):
+        """Diminue le nombre de vies de 1 si possible."""
+        if self.lives_left > 0:
+            self.lives_left -= 1
 
-    def take_damage(self, amount):
-        """Inflige des dégâts au joueur."""
-        self.set_health(self.current_health - amount)
-
-    def heal(self, amount):
-        """Soigne le joueur."""
-        self.set_health(self.current_health + amount)
+    def gain_life(self):
+        """Augmente le nombre de vies de 1 sans dépasser le maximum."""
+        if self.lives_left < self.max_lives:
+            self.lives_left += 1
 
     def add_med(self):
         """Incrémente le compteur de médicaments collectés."""
         self.meds_collected += 1
 
     def draw(self, screen):
-        """Dessine l'HUD."""
-        # Barre de fond
-        pygame.draw.rect(screen, self.health_bg_color,
-                         (self.bar_x, self.bar_y, self.bar_width, self.bar_height), border_radius=5)
+        """Dessine l'HUD avec les cœurs."""
+        for i in range(self.max_lives):
+            color = self.heart_full_color if i < self.lives_left else self.heart_empty_color
+            self.draw_heart(screen, 30 + i * 40, 30, 30, color)
 
-        # Barre de vie proportionnelle
-        health_ratio = self.current_health / self.max_health
-        pygame.draw.rect(screen, self.health_fg_color,
-                         (self.bar_x, self.bar_y, int(self.bar_width * health_ratio), self.bar_height),
-                         border_radius=5)
-
-        # Contour de la barre
-        pygame.draw.rect(screen, (0, 0, 0),
-                         (self.bar_x, self.bar_y, self.bar_width, self.bar_height), 2, border_radius=5)
-
-        # Affichage des médicaments
+        # Affichage du nombre de médicaments
         txt = self.font.render(f"Médicaments : {self.meds_collected}", True, (10, 10, 10))
-        screen.blit(txt, (self.bar_x, self.bar_y + self.bar_height + 10))
+        screen.blit(txt, (30, 70))
+
+    def draw_heart(self, surface, x, y, size, color):
+        """Dessine un cœur stylisé."""
+        r = size // 2
+        # Cercles supérieurs
+        pygame.draw.circle(surface, color, (x - r // 2, y), r // 2)
+        pygame.draw.circle(surface, color, (x + r // 2, y), r // 2)
+        # Triangle inférieur
+        points = [(x - r, y), (x + r, y), (x, y + r + 6)]
+        pygame.draw.polygon(surface, color, points)
 

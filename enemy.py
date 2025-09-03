@@ -7,7 +7,7 @@ class Enemy(pygame.sprite.Sprite):
                  walk_spritesheet_path, attack_spritesheet_path,
                  frame_width, frame_height,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
-                 attack_range=50, attack_damage=10):
+                 attack_range=50, attack_damage=1):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -27,7 +27,7 @@ class Enemy(pygame.sprite.Sprite):
         # Animation
         self.current_frame = 0
         self.animation_speed = 0.2
-        self.attack_animation_speed = 0.15
+        self.attack_animation_speed = 0.10
 
         # Image initiale
         self.image = self.walk_frames[0].copy()

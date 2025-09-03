@@ -15,7 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.direction = "right"
         self.state = "idle"  # idle, walk, attack, hurt, dead
         self.moving = False
-        self.health = 100
+        self.health = 3
 
         # Spritesheets
         self.walk_frames = self.load_frames(walk_spritesheet_path, frame_width, frame_height) if walk_spritesheet_path else []
