@@ -144,7 +144,7 @@ def main():
 
     # AJOUT: Créer une surface pour l'effet d'ombre
     shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    VISION_RADIUS = 200  # Rayon de vision du joueur
+    VISION_RADIUS = 300  # Rayon de vision du joueur
 
     has_taken_first_med = False
     visited_rooms = set()
@@ -217,21 +217,21 @@ def main():
             
             
             
-                        # Effet d'ombre : tout l'écran noir sauf le cercle de vision smooth
-            shadow_surface.fill((0, 0, 0, 255))  # Tout l'écran noir semi-transparent
+            shadow_surface.fill((0, 0, 0, 200))  # Tout l'écran noir
             
-                    # Dégradé radial : centre transparent, bord noir
-            for r in range(VISION_RADIUS, 0, -1):
+            # Créer un cercle de vision avec dégradé smooth
+            for r in range(VISION_RADIUS, 0, -2):  # Par pas de 2 pour plus de fluidité
                 t = r / VISION_RADIUS
-                alpha = int(220 * (1 - t**2))  # 0 au centre, 220 au bord
+                # Alpha inverse : transparent au centre (0), opaque au bord (200)
+                alpha = int(200 * (1 - (1 - t)**3))  # Courbe cubique pour plus de douceur
                 pygame.draw.circle(
                     shadow_surface,
                     (0, 0, 0, alpha),
                     player.rect.center,
                     r
-                )
-            
+                )            
             screen.blit(shadow_surface, (0, 0))
+            
             draw_minimap(screen, grid, current_pos, visited_rooms)
             hud.draw(screen)
             screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)), (10, SCREEN_HEIGHT - 50))

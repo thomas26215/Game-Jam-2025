@@ -45,6 +45,5 @@ class Medicament(pygame.sprite.Sprite):
     def collect(self):
         if not self.collected:
             self.collected = True
-            print("Médicament collecté !")
             self.collect_sound.play()  # Jouer le son de collecte
 
