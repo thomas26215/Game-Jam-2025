@@ -88,14 +88,13 @@ def menu_events(btns):
                 if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
                     return i
     return None
-
+"""
 def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
     # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
-        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle de départ",
         nb_medicaments=1,
@@ -107,7 +106,6 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
-        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle des ennemis",
         nb_medicaments=0,
@@ -127,7 +125,6 @@ def generate_random_grid(num_rooms=6):
             if pos not in grid and pos not in forbidden_positions:
                 grid[pos] = Room(
                     position=pos,
-                    tmx_file=None,
                     color=random_color(),
                     description=f"Salle {i+1}",
                     nb_medicaments=0
@@ -137,6 +134,65 @@ def generate_random_grid(num_rooms=6):
 
     # Salle finale
     farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
+    final_room = grid[farthest_pos]
+    final_room.nb_enemies_in_room = 8
+    final_room.description = "Salle Finale"
+    final_room.is_final = True
+
+    # Répartition des médicaments
+    total_meds = 30
+    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
+    for _ in range(total_meds):
+        room = random.choice(all_rooms_except_start)
+        room.nb_medicaments += 1
+
+    # Génération des portes
+    for room in grid.values():
+        room.generate_walls_and_doors(grid)
+
+    return grid
+
+"""
+
+def generate_random_grid(num_rooms=6):
+    grid = {}
+    start = (0, 0)
+    # Salle de départ sans TMX
+    grid[start] = Room(
+        position=start,
+        color=random_color(),
+        description="Salle de départ",
+        nb_medicaments=1,
+        nb_ennemis=1
+    )
+
+    # Première salle ennemis toujours à droite
+    enemy_room_pos = (start[0], start[1] + 1)
+    grid[enemy_room_pos] = Room(
+        position=enemy_room_pos,
+        color=random_color(),
+        description="Salle des ennemis",
+        nb_medicaments=0,
+        nb_ennemis=2
+    )
+
+    current_positions = [enemy_room_pos]
+
+    for i in range(2, num_rooms):
+        base = current_positions[-1]  # toujours partir de la dernière salle
+        r, c = base
+        # On ne crée que des salles à droite
+        new_pos = (r, c + 1)
+        grid[new_pos] = Room(
+            position=new_pos,
+            color=random_color(),
+            description=f"Salle {i+1}",
+            nb_medicaments=0
+        )
+        current_positions.append(new_pos)
+
+    # Salle finale
+    farthest_pos = max(grid.keys(), key=lambda pos: pos[1])  # salle la plus à droite
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
     final_room.description = "Salle Finale"
