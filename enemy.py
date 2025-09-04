@@ -44,6 +44,16 @@ class Enemy(pygame.sprite.Sprite):
         self.hitbox = self.rect.copy()
         self.hitbox.inflate_ip(-40, -40)  
 
+        # --- Hitbox réduite pour collisions ---
+        hitbox_width = int(self.rect.width * 0.3)
+        hitbox_height = int(self.rect.height * 0.3)
+        self.hitbox = pygame.Rect(
+            self.rect.centerx - hitbox_width // 2,
+            self.rect.centery - hitbox_height // 2,
+            hitbox_width,
+            hitbox_height
+        )
+
         # --- Mouvement ---
         self.random_dx = 0
         self.random_dy = 0
@@ -83,8 +93,8 @@ class Enemy(pygame.sprite.Sprite):
 
         # --- Déplacement ---
         if not self.dying and not self.taking_damage:
-            dx = self.player.rect.centerx - self.rect.centerx
-            dy = self.player.rect.centery - self.rect.centery
+            dx = self.player.hitbox.centerx - self.hitbox.centerx
+            dy = self.player.hitbox.centery - self.hitbox.centery
             distance = math.hypot(dx, dy)
 
             if distance <= self.attack_range and not self.attack_in_progress:
@@ -148,23 +158,23 @@ class Enemy(pygame.sprite.Sprite):
         if frames:
             self.current_frame += speed
             if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == 3:
-                # Hitbox d'attaque
-                attack_hitbox = self.rect.copy()
-                attack_hitbox.width = self.rect.width // 3
-                attack_hitbox.height = self.rect.height // 2
+                # Hitbox d'attaque plus petite
+                attack_hitbox = self.hitbox.copy()
+                attack_hitbox.width = self.hitbox.width
+                attack_hitbox.height = self.hitbox.height // 2
                 if self.direction == "right":
-                    attack_hitbox.x += self.rect.width // 2
+                    attack_hitbox.x += self.hitbox.width // 2
                 else:
-                    attack_hitbox.x -= self.rect.width // 2
-                attack_hitbox.y += self.rect.height // 4
-                if attack_hitbox.colliderect(self.player.rect):
+                    attack_hitbox.x -= self.hitbox.width // 2
+                attack_hitbox.y += self.hitbox.height // 4
+                if attack_hitbox.colliderect(self.player.hitbox):
                     self.player.take_damage(self.attack_damage)
                     self.damage_applied = True
 
             if self.current_frame >= len(frames):
                 if self.dying:
                     self.alive = False
-                    self.kill()  # Supprime le sprite du groupe
+                    self.kill()
                 self.attack_in_progress = False
                 self.attacking = False
                 self.taking_damage = False
@@ -177,8 +187,11 @@ class Enemy(pygame.sprite.Sprite):
 
         # --- Limite l'écran ---
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
+        self.hitbox.center = self.rect.center
 
     def draw(self, surface):
         if self.alive or self.dying:
             surface.blit(self.image, self.rect)
+            # 🔹 Debug hitbox
+            # pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
 

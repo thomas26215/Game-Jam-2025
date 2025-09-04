@@ -95,7 +95,7 @@ def generate_random_grid(num_rooms=6):
         color=random_color(),
         description="Salle de départ",
         nb_medicaments=1,
-        nb_ennemis=0
+        nb_ennemis=1
     )
 
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
@@ -359,39 +359,63 @@ def main():
 
             # --- Changement de salle ---
             for direction, door in current_room.doors:
-                if player.rect.colliderect(door):
+                # Détection basée sur le centre du joueur
+                # Liste des points de la hitbox du joueur à vérifier
+                player_points = [
+                    player.hitbox.topleft,
+                    player.hitbox.topright,
+                    player.hitbox.bottomleft,
+                    player.hitbox.bottomright,
+                    player.hitbox.midtop,
+                    player.hitbox.midbottom,
+                    player.hitbox.midleft,
+                    player.hitbox.midright
+                ]
+
+                # Vérification collision avec la porte
+                if any(door.collidepoint(p) for p in player_points):
                     r, c = current_pos
                     new_pos = {
-                        'up': (r - 1, c), 'down': (r + 1, c),
-                        'left': (r, c - 1), 'right': (r, c + 1)
+                        'up': (r - 1, c),
+                        'down': (r + 1, c),
+                        'left': (r, c - 1),
+                        'right': (r, c + 1)
                     }.get(direction, current_pos)
+
                     if current_pos == (0, 0) and not has_taken_first_med:
                         break
+
                     if new_pos in grid:
                         current_pos, current_room = new_pos, grid[new_pos]
                         visited_rooms.add(current_pos)
                         current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+                        # Repositionnement du joueur selon la direction
                         if direction == 'up':
                             player.rect.bottom = SCREEN_HEIGHT - 60
-                            player.hitbox.center = player.rect.center
                         elif direction == 'down':
                             player.rect.top = 60
-                            player.hitbox.center = player.rect.center
                         elif direction == 'left':
                             player.rect.right = SCREEN_WIDTH - 60
-                            player.hitbox.center = player.rect.center
                         elif direction == 'right':
                             player.rect.left = 60
-                            player.hitbox.center = player.rect.center
+
+                        # Synchronisation hitbox
+                        player.hitbox.center = player.rect.center
 
                     break
+
 
             # --- Dessin ---
             current_room.draw(screen)
             current_room.draw_contents(screen)
             screen.blit(player.image, player.rect)
+            # Affichage de la hitbox du joueur (en rouge semi-transparent)
+            pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)  # 2 = épaisseur de la bordure
+
             for enemy in current_room.enemies:
                 enemy.draw(screen)
+                pygame.draw.rect(screen, (255, 0, 0), enemy.rect, 2)  # 2 = épaisseur du contour
             for med in current_room.medicaments:
                 med.draw(screen)
 

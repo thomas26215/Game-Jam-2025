@@ -6,8 +6,8 @@ SCREEN_HEIGHT = 700
 HEAD_BAR_HEIGHT = 100
 
 # Mur et portes
-WALL_THICKNESS = 20
-DOOR_SIZE = 60
+WALL_THICKNESS = 10
+DOOR_SIZE = 10
 
 # Minimap
 MINIMAP_SCALE = 20  # Taille des carrés

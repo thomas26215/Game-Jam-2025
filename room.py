@@ -62,8 +62,8 @@ class Room:
         """Génère les portes selon la grille."""
         self.doors.clear()
         r, c = self.position
-        W, SW, SH, door_size = DOOR_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DOOR_SIZE
-        center_x, center_y = (SW - door_size) // 2, (SH - DOOR_SIZE) // 2
+        W, SW, SH = SCREEN_WIDTH, SCREEN_WIDTH, SCREEN_HEIGHT  # W n'est plus utile ici
+        center_x, center_y = SW // 2, SH // 2  # pour centrer la porte si nécessaire
 
         def has_neighbor(direction):
             if direction == 'up': return (r - 1, c) in grid
@@ -73,13 +73,18 @@ class Room:
             return False
 
         if has_neighbor('up'):
-            self.doors.append(('up', pygame.Rect(center_x, 0, door_size, W)))
+            # porte en haut: pleine largeur, hauteur = DOOR_SIZE
+            self.doors.append(('up', pygame.Rect(0, 0, SW, DOOR_SIZE)))
         if has_neighbor('down'):
-            self.doors.append(('down', pygame.Rect(center_x, SH - W, door_size, W)))
+            # porte en bas: pleine largeur
+            self.doors.append(('down', pygame.Rect(0, SH - DOOR_SIZE, SW, DOOR_SIZE)))
         if has_neighbor('left'):
-            self.doors.append(('left', pygame.Rect(0, center_y, W, door_size)))
+            # porte à gauche: pleine hauteur
+            self.doors.append(('left', pygame.Rect(0, 0, DOOR_SIZE, SH)))
         if has_neighbor('right'):
-            self.doors.append(('right', pygame.Rect(SW - W, center_y, W, door_size)))
+            # porte à droite: pleine hauteur
+            self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
+
 
     def generate_contents(self, player, screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT):
         """Génère ennemis et médicaments en évitant obstacles et portes."""
