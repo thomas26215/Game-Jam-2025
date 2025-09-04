@@ -59,7 +59,8 @@ class ControlsMenu:
                 "move_down": "Bas", 
                 "move_left": "Gauche",
                 "move_right": "Droite",
-                "attack": "Attaquer"
+                "attack": "Attaquer",
+                "interact": "Interagir"  
             }.get(action, action)
             
             # Bouton pour clavier

@@ -36,5 +36,6 @@ DEFAULT_CONTROLS = {
     "move_down": {"keyboard": [pygame.K_DOWN, pygame.K_s], "gamepad": []},  # Bouton 0 = X/A
     "move_left": {"keyboard": [pygame.K_LEFT, pygame.K_q], "gamepad": []},  # Pas de bouton par défaut, utilise les sticks
     "move_right": {"keyboard": [pygame.K_RIGHT, pygame.K_d], "gamepad": []},
-    "attack": {"keyboard": [pygame.K_SPACE], "gamepad": [1]}
+    "attack": {"keyboard": [pygame.K_SPACE], "gamepad": [1]},
+    "interact": {"keyboard": [pygame.K_e], "gamepad": [2]},
 }

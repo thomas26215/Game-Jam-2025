@@ -405,14 +405,22 @@ def main():
             current_room.draw_contents(screen)
             
             # Dessin du portail et interaction
-            on_portal = draw_portal_if_boss_room(screen, current_room, player)
-
-            # Vérifie si le joueur appuie sur E
-            keys = pygame.key.get_pressed()
-            if on_portal and keys[pygame.K_e]:
+            on_portal = draw_portal_if_boss_room(screen, current_room, player, settings)
+            
+            # Vérifie si le joueur appuie sur les touches d'interaction configurables
+            interact_pressed = False
+            
+            # Vérifier touches clavier d'interaction
+            interact_pressed = any(keys[key] for key in settings.get_control("interact", "keyboard"))
+            
+            # Vérifier boutons manette d'interaction
+            if player.joystick and not interact_pressed:
+                interact_pressed = any(player.joystick.get_button(btn) for btn in settings.get_control("interact", "gamepad"))
+            
+            if on_portal and interact_pressed:
                 state = "VICTORY"  # ou transition vers la salle suivante / fin
-
-
+                
+                
             screen.blit(player.image, player.rect)
             # Affichage de la hitbox du joueur (en rouge semi-transparent)
             pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)  # 2 = épaisseur de la bordure

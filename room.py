@@ -4,6 +4,7 @@ import random
 import pytmx
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DOOR_SIZE, FONT
 from enemy import Enemy
+from gameSettings import GameSettings
 from medicament import Medicament
 
 
@@ -321,7 +322,7 @@ def generate_random_grid(num_rooms=6):
 
 """
 
-def draw_portal_if_boss_room(surface, room, player):
+def draw_portal_if_boss_room(surface, room, player, settings):
     """
     Dessine un portail si la salle est finale et affiche un message si le joueur est dessus.
     """
@@ -335,13 +336,31 @@ def draw_portal_if_boss_room(surface, room, player):
             )
         # Dessin du portail
         room.portail.draw(surface)
+        
+        # Récupérer les touches d'interaction et les convertir en noms
+        interact_keys = settings.get_control("interact", "keyboard")
+        
+        # Fonction pour convertir les codes de touches en noms
+        def key_name(key_code):
+            key_names = {
+                pygame.K_e: "E", pygame.K_f: "F", pygame.K_r: "R", pygame.K_g: "G",
+                pygame.K_SPACE: "ESPACE", pygame.K_RETURN: "ENTRÉE",
+                pygame.K_UP: "↑", pygame.K_DOWN: "↓", 
+                pygame.K_LEFT: "←", pygame.K_RIGHT: "→"
+            }
+            return key_names.get(key_code, f"KEY_{key_code}")
+        
+        # Créer le texte avec les noms des touches
+        if interact_keys:
+            keys_text = " ou ".join([key_name(key) for key in interact_keys])
+            message = FONT.render(f"Appuyez sur {keys_text} pour rentrer", True, (255, 255, 0))
+        else:
+            message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
 
         # Détection collision joueur-portail
         if player.hitbox.colliderect(room.portail.rect):
-            message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
             msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
             msg_y = room.portail.rect.top - 30
             surface.blit(message, (msg_x, msg_y))
             return True  # Le joueur est sur le portail
-    return False
-
+    return False 
