@@ -6,7 +6,7 @@ from medicament import Medicament
 from room import Room
 from player import Player
 import random
-from menu import init_menus
+from menu import init_menus, Menu
 import sys
 from pygame.locals import *
 from config import (
@@ -123,73 +123,6 @@ def generate_random_grid(num_rooms=6):
             if pos not in grid and pos not in forbidden_positions:
                 grid[pos] = Room(
                     position=pos,
-                    tmx_file="maps/left_top.tmx",
-                    color=random_color(),
-                    description=f"Salle {i+1}",
-                    nb_medicaments=0
-                )
-                current_positions.append(pos)
-                break
-
-    # Salle finale
-    farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
-    final_room = grid[farthest_pos]
-    final_room.nb_enemies_in_room = 8
-    final_room.description = "Salle Finale"
-    final_room.is_final = True
-
-    # Répartition des médicaments
-    total_meds = 30
-    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
-    for _ in range(total_meds):
-        room = random.choice(all_rooms_except_start)
-        room.nb_medicaments += 1
-
-    # Génération des portes
-    for room in grid.values():
-        room.generate_walls_and_doors(grid)
-
-    return grid
-
-
-def generate_random_grid(num_rooms=6):
-    grid = {}
-    start = (0, 0)
-    # Salle de départ sans TMX
-    grid[start] = Room(
-        position=start,
-        tmx_file="maps/left_top.tmx",
-        color=random_color(),
-        description="Salle de départ",
-        nb_medicaments=1,
-        nb_ennemis=0
-    )
-
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    dx, dy = random.choice(directions)
-    enemy_room_pos = (start[0] + dx, start[1] + dy)
-    grid[enemy_room_pos] = Room(
-        position=enemy_room_pos,
-        tmx_file="maps/left_top.tmx",
-        color=random_color(),
-        description="Salle des ennemis",
-        nb_medicaments=0,
-        nb_ennemis=2
-    )
-
-    forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
-    forbidden_positions.discard(enemy_room_pos)
-    current_positions = [enemy_room_pos]
-
-    for i in range(2, num_rooms):
-        base = random.choice(current_positions)
-        r, c = base
-        possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-        random.shuffle(possible)
-        for pos in possible:
-            if pos not in grid and pos not in forbidden_positions:
-                grid[pos] = Room(
-                    position=pos,
                     tmx_file=None,
                     color=random_color(),
                     description=f"Salle {i+1}",
@@ -263,12 +196,52 @@ def main():
         visited_rooms.add(current_pos)
     
     running = True
+    fade_start_time = None
+    fade_duration = 5000  # 5 secondes en millisecondes
     while running:
         dt = clock.tick(60)  # Get delta time for animation
         
-        # Gestion des menus
+     # --- Fondu vers Game Over ---
+        if state == "FADE_TO_GAME_OVER":
+            if fade_start_time is None:
+                fade_start_time = pygame.time.get_ticks()
+            elapsed = pygame.time.get_ticks() - fade_start_time
+
+            # Dessin du jeu figé
+            current_room.draw(screen)
+            current_room.draw_contents(screen)
+            screen.blit(player.image, player.rect)
+            for enemy in current_room.enemies:
+                enemy.draw(screen)
+            for med in current_room.medicaments:
+                med.draw(screen)
+            draw_minimap(screen, grid, current_pos, visited_rooms)
+            hud.set_lives(player.health)
+            hud.draw(screen)
+            screen.blit(
+                FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)),
+                (10, SCREEN_HEIGHT - 50)
+            )
+
+            # Fondu noir progressif
+            alpha = min(255, int(255 * (elapsed / fade_duration)))
+            fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            fade_surface.set_alpha(alpha)
+            fade_surface.fill((0, 0, 0))
+            screen.blit(fade_surface, (0, 0))
+            pygame.display.flip()
+
+            if elapsed >= fade_duration:
+                state = STATE_GAME_OVER
+                fade_start_time = None
+            continue
+        
+        
+    # Gestion des menus
         if state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
-            # Update menu animation (ADD THIS LINE)
+    
+    
+            # Update menu animation
             menus[state].update(dt)
             
             # Dessiner le menu approprié
@@ -297,6 +270,58 @@ def main():
                         # Recommencer après un game over
                         init_game()
                     state = action
+
+        # État de victoire
+        elif state == "VICTORY":
+            # Afficher écran de victoire
+            
+            # Titre de victoire
+            victory_title = FONT.render("VICTOIRE !", True, (255, 255, 0))
+            victory_text = FONT.render("Vous avez collecté 30 médicaments !", True, (255, 255, 255))
+            
+            screen.blit(victory_title, (SCREEN_WIDTH // 2 - victory_title.get_width() // 2, 100))
+            screen.blit(victory_text, (SCREEN_WIDTH // 2 - victory_text.get_width() // 2, 150))
+            
+            # Afficher les boutons du menu de victoire
+            if "VICTORY" not in menus:
+                victory_menu = Menu()
+                victory_menu.add_button("Rejouer", STATE_PLAY)
+                victory_menu.add_button("Menu Principal", STATE_MENU)
+                victory_menu.add_button("Quitter", "QUIT")
+                menus["VICTORY"] = victory_menu
+            
+            # Dessiner les boutons manuellement
+            for i, button in enumerate(menus["VICTORY"].buttons):
+                color = (255, 0, 0) if i == menus["VICTORY"].current_selection else (255, 255, 255)
+                button_surface = FONT.render(button["text"], True, color)
+                y_pos = 280 + i * 100
+                button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+                
+                # Fond semi-transparent pour les boutons
+                button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
+                button_bg.set_alpha(128)
+                button_bg.fill((0, 0, 0))
+                screen.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
+                screen.blit(button_surface, button_rect)
+            
+            pygame.display.flip()
+            
+            # Gérer les événements du menu de victoire
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                    break
+                
+                action = menus["VICTORY"].handle_event(event)
+                if action == "QUIT":
+                    running = False
+                    break
+                elif action == STATE_PLAY:
+                    # Recommencer une nouvelle partie
+                    init_game()
+                    state = STATE_PLAY
+                elif action == STATE_MENU:
+                    state = STATE_MENU
         
         # État de jeu normal
         elif state == STATE_PLAY:
@@ -316,6 +341,17 @@ def main():
             # Mise à jour du jeu
             keys = pygame.key.get_pressed()
             player.update(keys)
+
+            # --- Vérification défaite (joueur mort) ---
+            if player.health <= 0:
+                state = "FADE_TO_GAME_OVER"
+                fade_start_time = None
+                continue
+
+            # --- Vérification victoire (30 médicaments) ---
+            if hud.meds_collected >= 30:
+                state = "VICTORY"
+                continue
 
             # --- Gestion des attaques du joueur ---
             if player.state == "attack" and hasattr(player, "attack_rect") and not player.has_hit_enemy:
