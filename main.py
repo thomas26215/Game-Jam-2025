@@ -270,42 +270,20 @@ def main():
                         # Recommencer après un game over
                         init_game()
                     state = action
-
+        
         # État de victoire
         elif state == "VICTORY":
-            # Afficher écran de victoire
-            
-            # Titre de victoire
-            victory_title = FONT.render("VICTOIRE !", True, (255, 255, 0))
-            victory_text = FONT.render("Vous avez collecté 30 médicaments !", True, (255, 255, 255))
-            
-            screen.blit(victory_title, (SCREEN_WIDTH // 2 - victory_title.get_width() // 2, 100))
-            screen.blit(victory_text, (SCREEN_WIDTH // 2 - victory_text.get_width() // 2, 150))
-            
             # Afficher les boutons du menu de victoire
             if "VICTORY" not in menus:
-                victory_menu = Menu()
+                victory_menu = Menu("wordsGame/victory.png")
                 victory_menu.add_button("Rejouer", STATE_PLAY)
                 victory_menu.add_button("Menu Principal", STATE_MENU)
                 victory_menu.add_button("Quitter", "QUIT")
                 menus["VICTORY"] = victory_menu
             
-            # Dessiner les boutons manuellement
-            for i, button in enumerate(menus["VICTORY"].buttons):
-                color = (255, 0, 0) if i == menus["VICTORY"].current_selection else (255, 255, 255)
-                button_surface = FONT.render(button["text"], True, color)
-                y_pos = 280 + i * 100
-                button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
-                
-                # Fond semi-transparent pour les boutons
-                button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
-                button_bg.set_alpha(128)
-                button_bg.fill((0, 0, 0))
-                screen.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
-                screen.blit(button_surface, button_rect)
-            
-            pygame.display.flip()
-            
+            # Dessiner le menu de victoire avec l'image
+            menus["VICTORY"].draw(screen)
+            pygame.display.flip()                        
             # Gérer les événements du menu de victoire
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -349,7 +327,7 @@ def main():
                 continue
 
             # --- Vérification victoire (30 médicaments) ---
-            if hud.meds_collected >= 30:
+            if hud.meds_collected >= 1:
                 state = "VICTORY"
                 continue
 
