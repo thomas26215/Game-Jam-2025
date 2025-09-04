@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="24">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
- <tileset firstgid="301" source="../tileset/grass_biome.tsx"/>
- <tileset firstgid="553" source="../tileset/ground_demo.tsx"/>
  <tileset firstgid="809" source="../tileset/overworld_tileset_grass.tsx"/>
  <tileset firstgid="1061" source="../tileset/decorative_cracks_coasts_animation.tsx"/>
  <tileset firstgid="1536" source="../tileset/houses.tsx"/>
  <tileset firstgid="5632" source="../tileset/objects_demo.tsx"/>
  <tileset firstgid="6656" source="../tileset/Objects.tsx"/>
  <tileset firstgid="6872" source="../tileset/premade_buildings_demo.tsx"/>
- <tileset firstgid="7896" source="../tileset/Tileset.tsx"/>
  <tileset firstgid="8083" source="../tileset/walls_floor.tsx"/>
  <tileset firstgid="8576" source="../tileset/walls_roofs_doors_demo.tsx"/>
  <tileset firstgid="9600" source="../tileset/Water_coasts_animation.tsx"/>

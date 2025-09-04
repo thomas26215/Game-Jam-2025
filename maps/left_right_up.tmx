@@ -2,7 +2,6 @@
 <map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="33">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/objects_demo.tsx"/>
- <tileset firstgid="1325" source="../tileset/ground_demo.tsx"/>
  <tileset firstgid="1581" source="../tileset/houses.tsx"/>
  <tileset firstgid="5677" source="../tileset/Objects.tsx"/>
  <layer id="1" name="Calque de Tuiles 1" width="64" height="43">

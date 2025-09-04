@@ -4,7 +4,6 @@
  <tileset firstgid="4097" source="../tileset/Objects.tsx"/>
  <tileset firstgid="4313" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="4613" source="../tileset/objects_demo.tsx"/>
- <tileset firstgid="5637" source="../tileset/ground_demo.tsx"/>
  <layer id="1" name="Calque de Tuiles 1" width="64" height="43">
   <data encoding="csv">
 4661,4693,4693,4692,4693,4693,4660,4660,4660,4660,4660,4660,4661,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4661,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4660,4692,4692,4692,4660,4661,4660,4660,4661,4661,4693,4660,4661,4661,4661,4459,4459,4459,

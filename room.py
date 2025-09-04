@@ -199,7 +199,7 @@ class Room:
 
 
         for _, door in self.doors:
-            pygame.draw.rect(surface, (255, 0, 0), door)
+            pygame.draw.rect(surface, (255, 0, 0, 0), door)
 
         for enemy in self.enemies:
             enemy.draw(surface)
@@ -212,7 +212,6 @@ class Room:
         for med in self.medicaments:
             med.draw(surface)
 
-"""
 def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
@@ -319,6 +318,8 @@ def generate_random_grid(num_rooms=6):
         room.generate_walls_and_doors(grid)
 
     return grid
+
+"""
 
 def draw_portal_if_boss_room(surface, room, player):
     """

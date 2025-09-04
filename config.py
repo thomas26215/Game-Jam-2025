@@ -7,7 +7,7 @@ HEAD_BAR_HEIGHT = 100
 
 # Mur et portes
 WALL_THICKNESS = 10
-DOOR_SIZE = 10
+DOOR_SIZE = 1
 
 # Minimap
 MINIMAP_SCALE = 20  # Taille des carrés
