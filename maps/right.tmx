@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="17">
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="18">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/grass_biome.tsx"/>
  <tileset firstgid="553" source="../tileset/ground_demo.tsx"/>
@@ -121,5 +121,8 @@
   <object id="14" type="walls" x="613.944" y="187.257" width="19.5642" height="32.607"/>
   <object id="15" type="walls" x="423.891" y="415.507" width="16.7693" height="27.9489"/>
   <object id="16" type="walls" x="1000.57" y="453.703" width="16.7693" height="21.4275"/>
+  <object id="17" x="0.931629" y="485.379">
+   <polygon points="0,0 125.77,3.72652 142.539,20.4958 218.001,19.5642 253.403,61.4875 270.172,67.0773 278.557,78.2568 299.985,83.8466 324.207,97.821 338.181,98.7527 349.361,116.454 355.882,117.385 364.267,126.702 387.558,129.496 395.011,142.539 443.455,146.266 490.037,180.736 492.832,200.3 0,200.3"/>
+  </object>
  </objectgroup>
 </map>
