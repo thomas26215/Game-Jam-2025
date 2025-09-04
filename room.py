@@ -29,30 +29,24 @@ class Room:
     def __init__(self, position, tmx_file=None, color=(50, 50, 50), description="Salle",
                  nb_medicaments=10, nb_ennemis=None):
         self.position = position
-        print("Room position:", position)
-        print("tmx_file:", tmx_file)
         self.color = color
         self.description = description
 
-        # Portes et ennemis
         self.doors = []
         self.enemies = []
-        self.enemies_data = []  # <-- garde les infos pour reload
+        self.enemies_data = []
 
-        # Médicaments
         self.nb_medicaments = nb_medicaments
         self.medicaments = []
         self.medicaments_positions = []
         self.medicaments_state = {}
 
-        # Obstacles et TMX
         self.obstacles = []
         self.map_loader = None
         if tmx_file is not None:
             self.map_loader = MapLoader(tmx_file)
             self.obstacles = self.map_loader.obstacles
 
-        # Nombre d’ennemis
         self.nb_enemies_in_room = nb_ennemis
 
     def generate_walls_and_doors(self, grid):
@@ -82,11 +76,10 @@ class Room:
         """Génère ennemis et médicaments en évitant obstacles et portes."""
         self.enemies.clear()
         self.medicaments.clear()
-
         door_areas = [door for _, door in self.doors]
 
         # --- Génération des ennemis ---
-        if not self.enemies_data:  # première fois
+        if not self.enemies_data:
             if self.nb_enemies_in_room is None:
                 self.nb_enemies_in_room = random.randint(1, 4)
 
@@ -98,7 +91,6 @@ class Room:
                     collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
                     if not collision:
                         break
-                # Choix aléatoire du zombie
                 zombie_number = random.randint(1, 4)
                 self.enemies_data.append({
                     "x": x,
@@ -106,18 +98,23 @@ class Room:
                     "folder": f"zombies/Zombie_{zombie_number}"
                 })
 
-        # Création des ennemis à partir de self.enemies_data
         for data in self.enemies_data:
             folder = data["folder"]
             enemy = Enemy(
                 data["x"], data["y"], player, screen_width, screen_height,
                 walk_spritesheet_path=f"{folder}/Walk.png",
                 attack_spritesheet_path=f"{folder}/Attack.png",
-                frame_width=128, frame_height=128,
+                hit_spritesheet_path=f"{folder}/Hurt.png",       # <-- animation dégâts
+                death_spritesheet_path=f"{folder}/Dead.png",   # <-- animation mort
+                frame_width=128,
+                frame_height=128,
                 activation_distance=200,
-                speed_close=1.5, speed_far=0.75,
-                attack_range=50
+                speed_close=1.5,
+                speed_far=0.75,
+                attack_range=50,
+                attack_damage=1  # tu peux l'ajouter si nécessaire
             )
+
             self.enemies.append(enemy)
 
         # --- Génération des médicaments ---
@@ -145,7 +142,6 @@ class Room:
             self.medicaments_state[pos] = med.collected
 
     def draw(self, surface):
-        """Dessine la salle et la map TMX, en gérant gid déjà Surface."""
         if self.map_loader is not None:
             tmx_data = self.map_loader.tmx_data
             for layer in tmx_data.visible_layers:
@@ -158,18 +154,12 @@ class Room:
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
 
-        # Dessin de la salle (nom)
         surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
 
-        # Dessin des portes
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0), door)
-
-        # Dessin des obstacles (rect collision)
         for obs in self.obstacles:
             pygame.draw.rect(surface, (100, 100, 100), obs)
-
-        # Dessin ennemis et médicaments
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:

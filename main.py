@@ -227,18 +227,19 @@ def main():
     grid = generate_random_grid(num_rooms=10)
     current_pos, current_room = (0, 0), grid[(0, 0)]
 
-    player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
-                    walk_spritesheet_path="player/walk.png",
-                    idle_spritesheet_path="player/idle.png",
-                    attack_spritesheet_path="player/attack.png",
-                    hurt_spritesheet_path="player/damage.png",
-                    death_spritesheets=["player/death1.png", "player/death2.png"],
-                    frame_width=64, frame_height=64)
+    player = Player(
+        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, SCREEN_WIDTH, SCREEN_HEIGHT,
+        walk_spritesheet_path="player/walk.png",
+        idle_spritesheet_path="player/idle.png",
+        attack_spritesheet_path="player/attack.png",
+        hurt_spritesheet_path="player/damage.png",
+        death_spritesheets=["player/death1.png", "player/death2.png"],
+        frame_width=64, frame_height=64
+    )
 
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD(max_lives=3, current_lives=3)
     hud.set_poisoned(True)
-
 
     shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     VISION_RADIUS = 300
@@ -257,6 +258,7 @@ def main():
                 sys.exit()
 
         elif state == STATE_PLAY:
+            # --- Gestion des événements ---
             for event in pygame.event.get():
                 if event.type == QUIT:
                     state = STATE_MENU
@@ -268,25 +270,33 @@ def main():
             keys = pygame.key.get_pressed()
             player.update(keys)
 
-            # Mettre à jour les ennemis (plus de murs)
-            for enemy in current_room.enemies:
-                enemy.update()  # supprimer la référence à walls
+            # --- Gestion des attaques du joueur ---
+            if player.state == "attack" and hasattr(player, "attack_rect") and not player.has_hit_enemy:
+                for enemy in current_room.enemies:
+                    if enemy.alive and player.attack_rect.colliderect(enemy.rect):
+                        enemy.take_damage()
+                        player.has_hit_enemy = True  # ✅ Empêche les multi-dégâts par attaque
+                        break  # ✅ Un seul ennemi touché par attaque
 
-            # Médicaments
+            # --- Mise à jour des ennemis ---
+            for enemy in current_room.enemies:
+                enemy.update()
+
+            # --- Supprimer les ennemis morts ---
+            current_room.enemies = [e for e in current_room.enemies if e.alive]
+
+            # --- Médicaments ---
             for med in current_room.medicaments:
                 med.update()
-                # Vérifier collision seulement si pas encore collecté
                 if not med.collected and player.rect.colliderect(med.rect):
                     med.collect()
                     hud.add_med()
                     if current_pos == (0, 0):
                         has_taken_first_med = True
 
-
-
             current_room.update_medicaments_state()
 
-            # Changement de salle
+            # --- Changement de salle ---
             for direction, door in current_room.doors:
                 if player.rect.colliderect(door):
                     r, c = current_pos
@@ -300,8 +310,6 @@ def main():
                         current_pos, current_room = new_pos, grid[new_pos]
                         visited_rooms.add(current_pos)
                         current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-                        # repositionnement joueur simplifié
-                        #player.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
                         if direction == 'up':
                             player.rect.bottom = SCREEN_HEIGHT - 60
                         elif direction == 'down':
@@ -312,7 +320,7 @@ def main():
                             player.rect.left = 60
                     break
 
-            # Dessin
+            # --- Dessin ---
             current_room.draw(screen)
             current_room.draw_contents(screen)
             screen.blit(player.image, player.rect)
@@ -321,21 +329,26 @@ def main():
             for med in current_room.medicaments:
                 med.draw(screen)
 
-            # Ombre
+            # Ombre dynamique
             shadow_surface.fill((0, 0, 0, 200))
             for r in range(VISION_RADIUS, 0, -2):
                 t = r / VISION_RADIUS
-                alpha = int(200 * (1 - (1 - t)**3))
+                alpha = int(200 * (1 - (1 - t) ** 3))
                 pygame.draw.circle(shadow_surface, (0, 0, 0, alpha), player.rect.center, r)
             screen.blit(shadow_surface, (0, 0))
 
+            # Minimap + HUD
             draw_minimap(screen, grid, current_pos, visited_rooms)
-
             hud.set_lives(player.health)
             hud.draw(screen)
-            screen.blit(FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)),
-                        (10, SCREEN_HEIGHT - 50))
 
+            # Texte salle actuelle
+            screen.blit(
+                FONT.render(f"{current_room.description} {current_pos}", True, (255, 255, 255)),
+                (10, SCREEN_HEIGHT - 50)
+            )
+
+            # Message tuto
             if current_pos == (0, 0) and not has_taken_first_med:
                 message = FONT.render("Récupérez le médicament pour continuer !", True, (255, 0, 0))
                 msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2

@@ -10,14 +10,14 @@ class Player(pygame.sprite.Sprite):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.speed = 3.5
-
-        # Direction et état
         self.direction = "right"
-        self.state = "idle"  # idle, walk, attack, hurt, dead
+        self.state = "idle"
         self.moving = False
         self.health = 3
+        self.attack_rect = None  # Hitbox d'attaque
+        self.has_hit_enemy = False  # ✅ Empêche les multi-dégâts par attaque
 
-        # Spritesheets
+        # Chargement des animations
         self.walk_frames = self.load_frames(walk_spritesheet_path, frame_width, frame_height) if walk_spritesheet_path else []
         self.idle_frames = self.load_frames(idle_spritesheet_path, frame_width, frame_height) if idle_spritesheet_path else []
         self.attack_frames = self.load_frames(attack_spritesheet_path, frame_width, frame_height) if attack_spritesheet_path else []
@@ -27,11 +27,10 @@ class Player(pygame.sprite.Sprite):
             for path in death_spritesheets:
                 self.death_frames.append(self.load_frames(path, frame_width, frame_height))
 
-        # Animation
         self.current_frame = 0
         self.animation_speed = 0.15
 
-        # Image initiale
+        # Image par défaut
         if self.idle_frames:
             self.image = self.idle_frames[0].copy()
         else:
@@ -39,8 +38,6 @@ class Player(pygame.sprite.Sprite):
             self.image.fill((0, 128, 255))
 
         self.rect = self.image.get_rect(center=(x, y))
-
-        # Cooldowns et timers
         self.attack_cooldown = 500  # ms
         self.last_attack_time = 0
         self.hurt_timer = 0
@@ -52,6 +49,7 @@ class Player(pygame.sprite.Sprite):
             self.joystick.init()
 
     def load_frames(self, path, frame_width, frame_height, scale=2):
+        """Charge une spritesheet et découpe les frames."""
         sheet = pygame.image.load(path).convert_alpha()
         frames = []
         sheet_width = sheet.get_width()
@@ -59,11 +57,12 @@ class Player(pygame.sprite.Sprite):
         for y in range(0, sheet_height, frame_height):
             for x in range(0, sheet_width, frame_width):
                 frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width*scale, frame_height*scale))
+                frame = pygame.transform.scale(frame, (frame_width * scale, frame_height * scale))
                 frames.append(frame)
         return frames
 
     def take_damage(self, amount):
+        """Inflige des dégâts au joueur."""
         if self.state not in ["dead", "hurt"]:
             self.health -= amount
             if self.health <= 0:
@@ -75,26 +74,38 @@ class Player(pygame.sprite.Sprite):
                 self.hurt_timer = pygame.time.get_ticks()
 
     def attack(self):
+        """Déclenche une attaque si le cooldown est écoulé."""
         now = pygame.time.get_ticks()
         if now - self.last_attack_time >= self.attack_cooldown and self.state not in ["attack", "hurt", "dead"]:
             self.state = "attack"
             self.current_frame = 0
             self.last_attack_time = now
+            self.has_hit_enemy = False  # ✅ Réinitialisation du flag
+
+            attack_rect = self.rect.copy()
+            attack_rect.width += 30
+            attack_rect.height += 20
+            if self.direction == "right":
+                attack_rect.x += 20
+            else:
+                attack_rect.x -= 20
+            self.attack_rect = attack_rect
 
     def update(self, keys):
+        """Met à jour le joueur."""
         dx = dy = 0
         self.moving = False
 
-        # --- Gestion attaque ---
+        # Attaque
         if keys[K_SPACE] or (self.joystick and self.joystick.get_button(1)):
             self.attack()
 
-        # Si attaque, hurt ou dead, le joueur ne bouge pas
+        # Si le joueur est en animation spéciale
         if self.state in ["attack", "hurt", "dead"]:
             self.animate()
             return
 
-        # --- Clavier ---
+        # Déplacements clavier
         if keys[K_UP] or keys[K_z]:
             dy = -self.speed
             self.moving = True
@@ -110,7 +121,7 @@ class Player(pygame.sprite.Sprite):
             self.direction = "right"
             self.moving = True
 
-        # --- Joystick ---
+        # Déplacements joystick
         if self.joystick:
             axis_x = self.joystick.get_axis(0)
             axis_y = self.joystick.get_axis(1)
@@ -123,17 +134,15 @@ class Player(pygame.sprite.Sprite):
                 dy = axis_y * self.speed
                 self.moving = True
 
-        # Déplacement
+        # Appliquer le mouvement
         self.rect.x += dx
         self.rect.y += dy
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
-
-        # Animation selon mouvement
         self.state = "walk" if self.moving else "idle"
         self.animate()
 
     def animate(self):
-        # Choix des frames selon l'état
+        """Gère les animations du joueur."""
         if self.state == "idle":
             frames = self.idle_frames
         elif self.state == "walk":
@@ -153,30 +162,26 @@ class Player(pygame.sprite.Sprite):
         if not frames:
             return
 
-        # Animation avec gestion de la dernière frame d'attaque
+        # Gestion spécifique attaque
         if self.state == "attack":
             if int(self.current_frame) >= len(frames) - 1:
                 self.image = frames[-1].copy()
                 if self.direction == "left":
                     self.image = pygame.transform.flip(self.image, True, False)
-                self.current_frame = 0
                 self.state = "idle"
-            else:
-                self.image = frames[int(self.current_frame)].copy()
-                if self.direction == "left":
-                    self.image = pygame.transform.flip(self.image, True, False)
-                self.current_frame += self.animation_speed
-        else:
-            self.image = frames[int(self.current_frame)].copy()
-            if self.direction == "left":
-                self.image = pygame.transform.flip(self.image, True, False)
-            self.current_frame += self.animation_speed
-            if self.current_frame >= len(frames):
-                if self.state == "dead":
-                    self.current_frame = len(frames) - 1
-                else:
-                    self.current_frame = 0
+                self.current_frame = 0
+                return
+
+        # Animation générale
+        self.current_frame += self.animation_speed
+        if self.current_frame >= len(frames):
+            self.current_frame = 0
+
+        self.image = frames[int(self.current_frame)].copy()
+        if self.direction == "left":
+            self.image = pygame.transform.flip(self.image, True, False)
 
     def draw(self, surface):
+        """Affiche le joueur à l'écran."""
         surface.blit(self.image, self.rect)
 
