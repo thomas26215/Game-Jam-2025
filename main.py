@@ -7,7 +7,7 @@ from medicament import Medicament
 from room import Room, generate_random_grid, draw_portal_if_boss_room
 from player import Player
 import random
-from menu import Menu, menu_events, init_menus,draw_menu
+from menu import Menu, init_menus
 import sys
 from pygame.locals import *
 from config import (
@@ -65,9 +65,6 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
 
 
 
-<<<<<<< HEAD
-
-=======
 def menu_events(btns):
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -91,8 +88,6 @@ def generate_random_grid(num_rooms=6):
     # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
-        color=random_color(),
-        description="Salle de départ",
         nb_medicaments=1,
         nb_ennemis=1
     )
@@ -101,8 +96,6 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0], start[1] + 1)
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
-        color=random_color(),
-        description="Salle des ennemis",
         nb_medicaments=0,
         nb_ennemis=2
     )
@@ -116,8 +109,6 @@ def generate_random_grid(num_rooms=6):
         new_pos = (r, c + 1)
         grid[new_pos] = Room(
             position=new_pos,
-            color=random_color(),
-            description=f"Salle {i+1}",
             nb_medicaments=0
         )
         current_positions.append(new_pos)
@@ -145,7 +136,6 @@ def generate_random_grid(num_rooms=6):
 
 def random_color():
     return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
->>>>>>> b1da706 (mise des settings avec la manettes non testé)
 
 
 # --- boucle principale ---

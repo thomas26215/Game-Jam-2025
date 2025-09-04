@@ -428,41 +428,6 @@ def init_menus(settings):
         STATE_MENU: main_menu,
         STATE_PAUSE: pause_menu,
         STATE_OPTIONS: options_menu,
-<<<<<<< HEAD
-        STATE_GAME_OVER: game_over_menu
-    }
-
-
-def draw_menu():
-    screen.fill((30, 30, 30))
-    title = FONT.render("Contagium", True, (255, 255, 0))
-    play_btn = FONT.render("Jouer", True, (255, 255, 255))
-    quit_btn = FONT.render("Quitter", True, (255, 255, 255))
-    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
-    screen.blit(play_btn, (SCREEN_WIDTH // 2 - play_btn.get_width() // 2, 280))
-    screen.blit(quit_btn, (SCREEN_WIDTH // 2 - quit_btn.get_width() // 2, 380))
-    pygame.display.flip()
-    return [(play_btn, 280), (quit_btn, 380)]
-
-
-
-def menu_events(btns):
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == KEYDOWN and event.key == K_ESCAPE:
-            pygame.quit()
-            sys.exit()
-        if event.type == MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            for i, (btn, y) in enumerate(btns):
-                bx = SCREEN_WIDTH // 2 - btn.get_width() // 2
-                if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
-                    return i
-    return None
-=======
         STATE_GAME_OVER: game_over_menu,
         "CONTROLS": controls_menu
     }
->>>>>>> b1da706 (mise des settings avec la manettes non testé)
