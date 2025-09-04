@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="32">
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="33">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/objects_demo.tsx"/>
  <tileset firstgid="1325" source="../tileset/ground_demo.tsx"/>
@@ -100,35 +100,34 @@
 </data>
  </layer>
  <objectgroup id="4" name="Calque d'Objets 1">
-  <object id="1" x="372.017" y="397.165" width="483.882" height="200.317"/>
-  <object id="2" x="695.472" y="386.759">
-   <polygon points="0,0 148.286,-0.867172 70.2409,-78.0455"/>
+  <object id="1" type="walls" x="372.017" y="397.165" width="483.882" height="200.317"/>
+  <object id="2" type="walls" x="685.066" y="396.298">
+   <polygon points="0,0 170.833,-0.97316 80.9208,-87.5844"/>
   </object>
-  <object id="4" x="-4.33586" y="1.73434" width="169.966" height="89.3187"/>
-  <object id="5" x="170.833" y="-1.73434" width="92.7874" height="45.9601"/>
-  <object id="6" x="160.427" y="36.4212" width="26.8823" height="19.945"/>
-  <object id="7" x="-11.2732" y="86.7172" width="67.6394" height="35.5541"/>
-  <object id="8" x="-26.8823" y="110.131" width="49.4288" height="41.6243"/>
-  <object id="9" x="262.753" y="-3.46869" width="200.317" height="20.8121"/>
-  <object id="10" x="558.459" y="-0.867172" width="462.203" height="14.7419"/>
-  <object id="11" x="1005.92" y="-2.60152" width="17.3434" height="288.768"/>
-  <object id="12" x="1010.26" y="401.501" width="13.8748" height="285.3"/>
-  <object id="13" x="0" y="672.058" width="1024.13" height="14.7419"/>
-  <object id="16" x="-0.867172" y="399.766" width="17.3434" height="284.432"/>
-  <object id="17" x="-1.73434" y="133.544" width="21.6793" height="152.622"/>
-  <object id="18" x="1047.54" y="45.0929"/>
-  <object id="19" x="14.7419" y="420.578" width="12.1404" height="146.552"/>
-  <object id="20" x="22.5465" y="483.015" width="19.945" height="200.317"/>
-  <object id="21" x="-22.5465" y="580.138" width="159.56" height="115.334"/>
-  <object id="22" x="106.662" y="626.098" width="76.3111" height="71.1081"/>
-  <object id="23" x="169.966" y="657.316" width="30.351" height="32.9525"/>
-  <object id="24" x="6.0702" y="564.529" width="64.1707" height="51.1631"/>
-  <object id="25" x="-4.33586" y="531.576" width="58.1005" height="64.1707"/>
-  <object id="26" x="986.842" y="614.825" width="37.2884" height="72.8424"/>
-  <object id="27" x="998.115" y="534.178" width="28.6167" height="150.021"/>
-  <object id="28" x="873.242" y="0.867172" width="150.888" height="40.7571"/>
-  <object id="29" x="953.022" y="31.2182" width="70.2409" height="45.0929"/>
-  <object id="30" x="982.506" y="79.7798" width="41.6243" height="43.3586"/>
-  <object id="31" x="953.022" y="98.8576"/>
+  <object id="4" type="walls" x="-4.33586" y="1.73434" width="169.966" height="89.3187"/>
+  <object id="5" type="walls" x="170.833" y="-1.73434" width="92.7874" height="45.9601"/>
+  <object id="6" type="walls" x="160.427" y="36.4212" width="26.8823" height="19.945"/>
+  <object id="7" type="walls" x="-11.2732" y="86.7172" width="67.6394" height="35.5541"/>
+  <object id="8" type="walls" x="-26.8823" y="110.131" width="49.4288" height="41.6243"/>
+  <object id="9" type="walls" x="262.753" y="-3.46869" width="200.317" height="20.8121"/>
+  <object id="10" type="walls" x="558.459" y="-0.867172" width="462.203" height="14.7419"/>
+  <object id="11" type="walls" x="1005.92" y="-2.60152" width="17.3434" height="288.768"/>
+  <object id="12" type="walls" x="1010.26" y="401.501" width="13.8748" height="285.3"/>
+  <object id="13" type="walls" x="0" y="672.058" width="1024.13" height="14.7419"/>
+  <object id="16" type="walls" x="-0.867172" y="399.766" width="17.3434" height="284.432"/>
+  <object id="17" type="walls" x="-1.73434" y="133.544" width="21.6793" height="152.622"/>
+  <object id="19" type="walls" x="14.7419" y="420.578" width="12.1404" height="146.552"/>
+  <object id="20" type="walls" x="22.5465" y="483.015" width="19.945" height="200.317"/>
+  <object id="21" type="walls" x="-22.5465" y="580.138" width="159.56" height="115.334"/>
+  <object id="22" type="walls" x="106.662" y="626.098" width="76.3111" height="71.1081"/>
+  <object id="23" type="walls" x="169.966" y="657.316" width="30.351" height="32.9525"/>
+  <object id="24" type="walls" x="6.0702" y="564.529" width="64.1707" height="51.1631"/>
+  <object id="25" type="walls" x="-4.33586" y="531.576" width="58.1005" height="64.1707"/>
+  <object id="26" type="walls" x="986.842" y="614.825" width="37.2884" height="72.8424"/>
+  <object id="27" type="walls" x="998.115" y="534.178" width="28.6167" height="150.021"/>
+  <object id="28" type="walls" x="873.242" y="0.867172" width="150.888" height="40.7571"/>
+  <object id="29" type="walls" x="953.022" y="31.2182" width="70.2409" height="45.0929"/>
+  <object id="30" type="walls" x="982.506" y="79.7798" width="41.6243" height="43.3586"/>
+  <object id="32" type="walls" x="790.861" y="13.8748" width="89.3187" height="18.2106"/>
  </objectgroup>
 </map>

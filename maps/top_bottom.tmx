@@ -146,11 +146,11 @@
 </data>
  </layer>
  <objectgroup id="3" name="Calque d'Objets 1" class="walls">
-  <object id="8" x="6.93738" y="6.0702" width="316.518" height="690.269"/>
-  <object id="11" x="662.519" y="-12.1404" width="337.33" height="262.753"/>
-  <object id="13" x="690.269" y="234.136" width="318.252" height="111.865"/>
-  <object id="14" x="717.151" y="336.463" width="295.706" height="372.884"/>
-  <object id="15" x="581.872" y="424.914" width="230.668" height="287.034"/>
-  <object id="16" x="248.011" y="426.649" width="196.848" height="292.237"/>
+  <object id="8" type="walls" x="-5.20303" y="-8.67172" width="328.658" height="705.011"/>
+  <object id="11" type="walls" x="661.652" y="-13.0076" width="361.611" height="262.753"/>
+  <object id="13" type="walls" x="690.269" y="234.136" width="336.463" height="111.865"/>
+  <object id="14" type="walls" x="717.151" y="336.463" width="313.049" height="372.884"/>
+  <object id="15" type="walls" x="581.872" y="424.914" width="230.668" height="287.034"/>
+  <object id="16" type="walls" x="248.011" y="426.649" width="196.848" height="292.237"/>
  </objectgroup>
 </map>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="17">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/grass_biome.tsx"/>
  <tileset firstgid="553" source="../tileset/ground_demo.tsx"/>
@@ -107,4 +107,19 @@
 207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,207,1860,2512,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,2513,1881,1882,1883,1884,1885,1886,1885,1886,1775,1776,1777,1778,1779,1780,1781,1782
 </data>
  </layer>
+ <objectgroup id="5" name="Calque d'Objets 1">
+  <object id="1" type="walls" x="-2.79489" y="-1.86326" width="107.137" height="470.473"/>
+  <object id="2" type="walls" x="101.548" y="-3.72652" width="186.326" height="101.548"/>
+  <object id="4" type="walls" x="260.856" y="0.931629" width="177.01" height="149.992"/>
+  <object id="5" type="walls" x="255.266" y="148.129" width="19.5642" height="26.0856"/>
+  <object id="6" type="walls" x="436.934" y="4.65814" width="207.753" height="67.0773"/>
+  <object id="8" type="walls" x="643.756" y="3.72652" width="232.907" height="148.129"/>
+  <object id="9" type="walls" x="876.663" y="-1.86326" width="148.129" height="246.882"/>
+  <object id="10" type="walls" x="494.695" y="618.602" width="277.625" height="69.8722"/>
+  <object id="11" type="walls" x="768.594" y="573.883" width="128.565" height="116.454"/>
+  <object id="12" type="walls" x="895.295" y="500.285" width="131.36" height="190.052"/>
+  <object id="14" type="walls" x="613.944" y="187.257" width="19.5642" height="32.607"/>
+  <object id="15" type="walls" x="423.891" y="415.507" width="16.7693" height="27.9489"/>
+  <object id="16" type="walls" x="1000.57" y="453.703" width="16.7693" height="21.4275"/>
+ </objectgroup>
 </map>
