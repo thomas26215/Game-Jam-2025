@@ -16,6 +16,7 @@ from config import (
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
+from gameSettings import GameSettings  # Import de ta classe
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -64,13 +65,94 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
 
 
 
+<<<<<<< HEAD
 
+=======
+def menu_events(btns):
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == KEYDOWN and event.key == K_ESCAPE:
+            pygame.quit()
+            sys.exit()
+        if event.type == MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            for i, (btn, y) in enumerate(btns):
+                bx = SCREEN_WIDTH // 2 - btn.get_width() // 2
+                if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
+                    return i
+    return None
+
+
+def generate_random_grid(num_rooms=6):
+    grid = {}
+    start = (0, 0)
+    # Salle de départ sans TMX
+    grid[start] = Room(
+        position=start,
+        color=random_color(),
+        description="Salle de départ",
+        nb_medicaments=1,
+        nb_ennemis=1
+    )
+
+    # Première salle ennemis toujours à droite
+    enemy_room_pos = (start[0], start[1] + 1)
+    grid[enemy_room_pos] = Room(
+        position=enemy_room_pos,
+        color=random_color(),
+        description="Salle des ennemis",
+        nb_medicaments=0,
+        nb_ennemis=2
+    )
+
+    current_positions = [enemy_room_pos]
+
+    for i in range(2, num_rooms):
+        base = current_positions[-1]  # toujours partir de la dernière salle
+        r, c = base
+        # On ne crée que des salles à droite
+        new_pos = (r, c + 1)
+        grid[new_pos] = Room(
+            position=new_pos,
+            color=random_color(),
+            description=f"Salle {i+1}",
+            nb_medicaments=0
+        )
+        current_positions.append(new_pos)
+
+    # Salle finale
+    farthest_pos = max(grid.keys(), key=lambda pos: pos[1])  # salle la plus à droite
+    final_room = grid[farthest_pos]
+    final_room.nb_enemies_in_room = 8
+    final_room.description = "Salle Finale"
+    final_room.is_final = True
+
+    # Répartition des médicaments
+    total_meds = 30
+    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
+    for _ in range(total_meds):
+        room = random.choice(all_rooms_except_start)
+        room.nb_medicaments += 1
+
+    # Génération des portes
+    for room in grid.values():
+        room.generate_walls_and_doors(grid)
+
+    return grid
+
+
+def random_color():
+    return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+>>>>>>> b1da706 (mise des settings avec la manettes non testé)
 
 
 # --- boucle principale ---
 def main():
+    settings = GameSettings()  # Créer l'instance des settings
     state = STATE_MENU
-    menus = init_menus()
+    menus = init_menus(settings)  # Passer les settings aux menus
     
     # Initialisation des variables de jeu
     grid = None
@@ -91,7 +173,8 @@ def main():
         grid = generate_random_grid(num_rooms=10)
         current_pos, current_room = (0, 0), grid[(0, 0)]
 
-        player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, SCREEN_WIDTH, SCREEN_HEIGHT,
+        player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, settings,  # Passer les settings au player
+                        SCREEN_WIDTH, SCREEN_HEIGHT,
                         walk_spritesheet_path="player/walk.png",
                         idle_spritesheet_path="player/idle.png",
                         attack_spritesheet_path="player/attack.png",
@@ -113,7 +196,7 @@ def main():
     while running:
         dt = clock.tick(60)  # Get delta time for animation
         
-     # --- Fondu vers Game Over ---
+        # --- Fondu vers Game Over ---
         if state == "FADE_TO_GAME_OVER":
             if fade_start_time is None:
                 fade_start_time = pygame.time.get_ticks()
@@ -144,11 +227,8 @@ def main():
                 fade_start_time = None
             continue
         
-        
-    # Gestion des menus
-        if state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
-    
-    
+        # Gestion des menus
+        elif state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
             # Update menu animation
             menus[state].update(dt)
             
@@ -170,6 +250,8 @@ def main():
                     # Retour au menu précédent
                     if state == STATE_OPTIONS:
                         state = STATE_MENU
+                elif action == "CONTROLS":
+                    state = "CONTROLS"
                 elif action is not None:
                     if action == STATE_PLAY and state == STATE_MENU:
                         # Nouvelle partie
@@ -179,11 +261,25 @@ def main():
                         init_game()
                     state = action
         
+        # Menu des contrôles
+        elif state == "CONTROLS":
+            menus["CONTROLS"].draw(screen)
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                    break
+                
+                action = menus["CONTROLS"].handle_event(event)
+                if action == "BACK":
+                    state = STATE_OPTIONS
+        
         # État de victoire
         elif state == "VICTORY":
             # Afficher les boutons du menu de victoire
             if "VICTORY" not in menus:
-                victory_menu = Menu("wordsGame/victory.png")
+                victory_menu = Menu(settings, "wordsGame/victory.png")
                 victory_menu.add_button("Rejouer", STATE_PLAY)
                 victory_menu.add_button("Menu Principal", STATE_MENU)
                 victory_menu.add_button("Quitter", "QUIT")
@@ -191,7 +287,8 @@ def main():
             
             # Dessiner le menu de victoire avec l'image
             menus["VICTORY"].draw(screen)
-            pygame.display.flip()                        
+            pygame.display.flip()
+            
             # Gérer les événements du menu de victoire
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -312,7 +409,6 @@ def main():
                         player.hitbox.center = player.rect.center
 
                     break
-
 
             # --- Dessin ---
             current_room.draw(screen)

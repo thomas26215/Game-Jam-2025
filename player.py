@@ -2,11 +2,12 @@ import pygame
 from pygame.locals import *
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, screen_width=1024, screen_height=700,
+    def __init__(self, x, y, settings, screen_width=1024, screen_height=700,
                  walk_spritesheet_path=None, idle_spritesheet_path=None,
                  attack_spritesheet_path=None, hurt_spritesheet_path=None,
                  death_spritesheets=None, frame_width=50, frame_height=50):
         super().__init__()
+        self.settings = settings  # Référence aux settings
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.speed = 3.5
@@ -41,7 +42,6 @@ class Player(pygame.sprite.Sprite):
         self.hitbox = self.rect.copy()
         self.hitbox.inflate_ip(-90, -75)  # Ajuste la taille de la hitbox ici
 
-
         self.attack_cooldown = 500  # ms
         self.last_attack_time = 0
         self.hurt_timer = 0
@@ -54,16 +54,23 @@ class Player(pygame.sprite.Sprite):
 
     def load_frames(self, path, frame_width, frame_height, scale=2):
         """Charge une spritesheet et découpe les frames."""
-        sheet = pygame.image.load(path).convert_alpha()
-        frames = []
-        sheet_width = sheet.get_width()
-        sheet_height = sheet.get_height()
-        for y in range(0, sheet_height, frame_height):
-            for x in range(0, sheet_width, frame_width):
-                frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * scale, frame_height * scale))
-                frames.append(frame)
-        return frames
+        try:
+            sheet = pygame.image.load(path).convert_alpha()
+            frames = []
+            sheet_width = sheet.get_width()
+            sheet_height = sheet.get_height()
+            for y in range(0, sheet_height, frame_height):
+                for x in range(0, sheet_width, frame_width):
+                    frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+                    frame = pygame.transform.scale(frame, (frame_width * scale, frame_height * scale))
+                    frames.append(frame)
+            return frames
+        except pygame.error as e:
+            print(f"Erreur lors du chargement de {path}: {e}")
+            return []
+        except FileNotFoundError:
+            print(f"Fichier non trouvé: {path}")
+            return []
 
     def take_damage(self, amount):
         """Inflige des dégâts au joueur."""
@@ -100,8 +107,13 @@ class Player(pygame.sprite.Sprite):
         dx = dy = 0
         self.moving = False
 
-        # Attaque
-        if keys[K_SPACE] or (self.joystick and self.joystick.get_button(1)):
+        # Attaque avec contrôles configurables (clavier + manette)
+        keyboard_attack = any(keys[key] for key in self.settings.get_control("attack", "keyboard"))
+        gamepad_attack = False
+        if self.joystick:
+            gamepad_attack = any(self.joystick.get_button(btn) for btn in self.settings.get_control("attack", "gamepad"))
+        
+        if keyboard_attack or gamepad_attack:
             self.attack()
 
         # Si le joueur est en animation spéciale
@@ -109,18 +121,103 @@ class Player(pygame.sprite.Sprite):
             self.animate()
             return
 
-        # Déplacements clavier
-        if keys[K_UP] or keys[K_z]:
+        # Déplacements clavier avec contrôles configurables
+        if any(keys[key] for key in self.settings.get_control("move_up", "keyboard")):
             dy = -self.speed
             self.moving = True
-        if keys[K_DOWN] or keys[K_s]:
+        if any(keys[key] for key in self.settings.get_control("move_down", "keyboard")):
             dy = self.speed
             self.moving = True
-        if keys[K_LEFT] or keys[K_q]:
+        if any(keys[key] for key in self.settings.get_control("move_left", "keyboard")):
             dx = -self.speed
             self.direction = "left"
             self.moving = True
-        if keys[K_RIGHT] or keys[K_d]:
+        if any(keys[key] for key in self.settings.get_control("move_right", "keyboard")):
+            dx = self.speed
+            self.direction = "right"
+            self.moving = True
+
+        # Déplacements manette (boutons + sticks)
+        if self.joystick:
+            # Boutons de déplacement configurables
+            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_up", "gamepad")):
+                dy = -self.speed
+                self.moving = True
+            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_down", "gamepad")):
+                dy = self.speed
+                self.moving = True
+            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_left", "gamepad")):
+                dx = -self.speed
+                self.direction = "left"
+                self.moving = True
+            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_right", "gamepad")):
+                dx = self.speed
+                self.direction = "right"
+                self.moving = True
+            
+            # Sticks analogiques (toujours actifs)
+            axis_x = self.joystick.get_axis(0)
+            axis_y = self.joystick.get_axis(1)
+            deadzone = 0.2
+            if abs(axis_x) > deadzone:
+                dx = axis_x * self.speed
+                self.direction = "right" if dx > 0 else "left"
+                self.moving = True
+            if abs(axis_y) > deadzone:
+                dy = axis_y * self.speed
+                self.moving = True
+
+        # Appliquer le mouvement
+        self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
+        self.state = "walk" if self.moving else "idle"
+        
+        # --- Gestion des collisions avec les obstacles ---
+        # Test déplacement horizontal
+        self.hitbox.x += dx
+        for obs in current_room.obstacles:
+            if self.hitbox.colliderect(obs):
+                if dx > 0:
+                    self.hitbox.right = obs.left
+                elif dx < 0:
+                    self.hitbox.left = obs.right
+
+        # Test déplacement vertical
+        self.hitbox.y += dy
+        for obs in current_room.obstacles:
+            if self.hitbox.colliderect(obs):
+                if dy > 0:
+                    self.hitbox.bottom = obs.top
+                elif dy < 0:
+                    self.hitbox.top = obs.bottom
+
+        # Synchronise la position de l'image avec la hitbox
+        self.rect.center = self.hitbox.center
+
+        self.animate()
+        dx = dy = 0
+        self.moving = False
+
+        # Attaque avec contrôles configurables
+        if any(keys[key] for key in self.settings.get_control("attack")) or (self.joystick and self.joystick.get_button(1)):
+            self.attack()
+
+        # Si le joueur est en animation spéciale
+        if self.state in ["attack", "hurt", "dead"]:
+            self.animate()
+            return
+
+        # Déplacements clavier avec contrôles configurables
+        if any(keys[key] for key in self.settings.get_control("move_up")):
+            dy = -self.speed
+            self.moving = True
+        if any(keys[key] for key in self.settings.get_control("move_down")):
+            dy = self.speed
+            self.moving = True
+        if any(keys[key] for key in self.settings.get_control("move_left")):
+            dx = -self.speed
+            self.direction = "left"
+            self.moving = True
+        if any(keys[key] for key in self.settings.get_control("move_right")):
             dx = self.speed
             self.direction = "right"
             self.moving = True
@@ -166,7 +263,6 @@ class Player(pygame.sprite.Sprite):
 
         self.animate()
 
-
     def animate(self):
         """Gère les animations du joueur."""
         if self.state == "idle":
@@ -211,4 +307,3 @@ class Player(pygame.sprite.Sprite):
         """Affiche le joueur à l'écran."""
         surface.blit(self.image, self.rect)
         pygame.draw.rect(surface, (255, 0, 0), self.rect, 2)  # Hitbox rouge
-

@@ -5,13 +5,177 @@ from config import (
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
-# --- Options state ---
-music_on = True
-music_volume = 0.5 
 
-# Créer une classe Menu pour une meilleure organisation
+class ControlsMenu:
+    def __init__(self, settings):
+        self.settings = settings
+        self.buttons = []
+        self.current_selection = 0
+        self.waiting_for_key = False
+        self.waiting_for_gamepad = False
+        self.key_to_change = None
+        self.device_to_change = None
+        
+        # Charger l'image de fond
+        try:
+            self.background = pygame.image.load("right.png").convert()
+            self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        except:
+            self.background = None
+        
+        self.update_buttons()
+    
+    def update_buttons(self):
+        """Met à jour la liste des boutons avec les touches actuelles."""
+        self.buttons = []
+        
+        # Fonction helper pour convertir les codes de touches en noms
+        def key_name(key_code):
+            key_names = {
+                K_UP: "↑", K_DOWN: "↓", K_LEFT: "←", K_RIGHT: "→",
+                K_z: "Z", K_q: "Q", K_s: "S", K_d: "D",
+                K_SPACE: "ESPACE", K_RETURN: "ENTRÉE",
+                K_a: "A", K_b: "B", K_c: "C", K_e: "E", K_f: "F",
+                K_g: "G", K_h: "H", K_i: "I", K_j: "J", K_k: "K",
+                K_l: "L", K_m: "M", K_n: "N", K_o: "O", K_p: "P",
+                K_r: "R", K_t: "T", K_u: "U", K_v: "V", K_w: "W",
+                K_x: "X", K_y: "Y"
+            }
+            return key_names.get(key_code, f"KEY_{key_code}")
+        
+        def button_name(button_code):
+            button_names = {
+                0: "A/X", 1: "B/Circle", 2: "X/Square", 3: "Y/Triangle",
+                4: "LB", 5: "RB", 6: "Back", 7: "Start",
+                8: "LS", 9: "RS", 10: "DPad Up", 11: "DPad Down",
+                12: "DPad Left", 13: "DPad Right"
+            }
+            return button_names.get(button_code, f"BTN_{button_code}")
+        
+        # Ajouter les boutons pour chaque action
+        for action in self.settings.controls:
+            action_name = {
+                "move_up": "Haut",
+                "move_down": "Bas", 
+                "move_left": "Gauche",
+                "move_right": "Droite",
+                "attack": "Attaquer"
+            }.get(action, action)
+            
+            # Bouton pour clavier
+            keyboard_keys = self.settings.get_control(action, "keyboard")
+            keys_text = " + ".join([key_name(key) for key in keyboard_keys]) if keyboard_keys else "Aucune"
+            self.buttons.append({
+                "text": f"{action_name} (Clavier): {keys_text}",
+                "action": action,
+                "device": "keyboard"
+            })
+            
+            # Bouton pour manette
+            gamepad_keys = self.settings.get_control(action, "gamepad")
+            buttons_text = " + ".join([button_name(btn) for btn in gamepad_keys]) if gamepad_keys else "Aucune"
+            if(action_name == "Attaquer"):
+                self.buttons.append({
+                    "text": f"{action_name} (Manette): {buttons_text}",
+                    "action": action,
+                    "device": "gamepad"
+                })
+        
+        # Boutons spéciaux
+        self.buttons.append({"text": "Réinitialiser", "action": "RESET", "device": None})
+        self.buttons.append({"text": "Retour", "action": "BACK", "device": None})
+    
+    def draw(self, surface):
+        # Dessiner le fond
+        if self.background:
+            surface.blit(self.background, (0, 0))
+        else:
+            surface.fill((30, 30, 30))
+        
+        # Titre
+        title = FONT.render("Configuration des contrôles", True, (255, 255, 0))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 50))
+        surface.blit(title, title_rect)
+        
+        # Message d'attente
+        if self.waiting_for_key:
+            wait_text = FONT.render("Appuyez sur une touche clavier...", True, (255, 100, 100))
+            wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
+            surface.blit(wait_text, wait_rect)
+        elif self.waiting_for_gamepad:
+            wait_text = FONT.render("Appuyez sur un bouton de manette...", True, (255, 100, 100))
+            wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
+            surface.blit(wait_text, wait_rect)
+        
+        # Boutons (plus compacts)
+        for i, button in enumerate(self.buttons):
+            color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
+            if (self.waiting_for_key or self.waiting_for_gamepad) and i == self.current_selection:
+                color = (255, 100, 100)
+            
+            # Police plus petite pour plus de boutons
+            small_font = pygame.font.SysFont("Arial", 24)
+            button_surface = small_font.render(button["text"], True, color)
+            y_pos = 120 + i * 35  # Espacement réduit
+            button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+            
+            # Fond semi-transparent
+            button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 5))
+            button_bg.set_alpha(128)
+            button_bg.fill((0, 0, 0))
+            surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 2))
+            surface.blit(button_surface, button_rect)
+    
+    def handle_event(self, event):
+        if self.waiting_for_key:
+            if event.type == KEYDOWN:
+                if event.key not in [K_ESCAPE]:
+                    self.settings.set_control(self.key_to_change, "keyboard", [event.key])
+                    self.update_buttons()
+                self.waiting_for_key = False
+                self.key_to_change = None
+            return None
+        
+        if self.waiting_for_gamepad:
+            if event.type == JOYBUTTONDOWN:
+                self.settings.set_control(self.key_to_change, "gamepad", [event.button])
+                self.update_buttons()
+                self.waiting_for_gamepad = False
+                self.key_to_change = None
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                self.waiting_for_gamepad = False
+                self.key_to_change = None
+            return None
+        
+        if event.type == KEYDOWN:
+            if event.key == K_UP:
+                self.current_selection = (self.current_selection - 1) % len(self.buttons)
+            elif event.key == K_DOWN:
+                self.current_selection = (self.current_selection + 1) % len(self.buttons)
+            elif event.key == K_RETURN:
+                button = self.buttons[self.current_selection]
+                action = button["action"]
+                device = button.get("device")
+                
+                if action == "RESET":
+                    self.settings.reset_controls()
+                    self.update_buttons()
+                elif action == "BACK":
+                    return "BACK"
+                elif action in self.settings.controls and device:
+                    self.key_to_change = action
+                    if device == "keyboard":
+                        self.waiting_for_key = True
+                    elif device == "gamepad":
+                        self.waiting_for_gamepad = True
+            elif event.key == K_ESCAPE:
+                return "BACK"
+        
+        return None
+
 class Menu:
-    def __init__(self, title_image_path=None):
+    def __init__(self, settings, title_image_path=None):
+        self.settings = settings
         self.buttons = []
         self.current_selection = 0
         
@@ -99,16 +263,15 @@ class Menu:
                 self.rat_visible = False
 
     def draw(self, surface):
-        global music_on, music_volume
-
         # Update button labels dynamically for options menu
         for button in self.buttons:
             if button["action"] == "TOGGLE_MUSIC":
-                button["text"] = f"Music: {'ON' if music_on else 'OFF'}"
+                button["text"] = f"Music: {'ON' if self.settings.music_on else 'OFF'}"
                 button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
             elif button["action"] == "CHANGE_VOLUME":
-                button["text"] = f"Volume: {int(music_volume * 100)}%"
+                button["text"] = f"Volume: {int(self.settings.music_volume * 100)}%"
                 button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
+        
         # Dessiner le fond
         if self.background:
             surface.blit(self.background, (0, 0))
@@ -127,7 +290,7 @@ class Menu:
         
         # Titre avec image ou texte de fallback
         if self.title_image:
-            # Réduire l'image à 80% de sa taille
+            # Réduire l'image à 40% de sa taille
             original_width = self.title_image.get_width()
             original_height = self.title_image.get_height()
             new_width = int(original_width * 0.4)
@@ -150,7 +313,6 @@ class Menu:
             surface.blit(title_bg, (title_rect.x - 10, title_rect.y - 5))
             surface.blit(title, title_rect)
         
-        
         # Boutons avec fond semi-transparent (TOUJOURS affichés)
         for i, button in enumerate(self.buttons):
             color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
@@ -164,6 +326,7 @@ class Menu:
             button_bg.fill((0, 0, 0))
             surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
             surface.blit(button_surface, button_rect)
+            
             # Draw slider if it's the volume option
             if button["action"] == "VOLUME_SLIDER":
                 bar_width = 200
@@ -174,18 +337,15 @@ class Menu:
                 # Bar background
                 pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
                 # Fill based on volume
-                fill_width = int(bar_width * music_volume)
+                fill_width = int(bar_width * self.settings.music_volume)
                 pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height))
 
                 # Knob
                 knob_x = bar_x + fill_width - 5
                 knob_y = bar_y - 6
                 pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20))
-
         
     def handle_event(self, event):
-        global music_on, music_volume
-
         if event.type == KEYDOWN:
             if event.key == K_UP:
                 self.current_selection = (self.current_selection - 1) % len(self.buttons)
@@ -196,12 +356,7 @@ class Menu:
             elif event.key == K_RETURN:
                 action = self.buttons[self.current_selection]["action"]
                 if action == "TOGGLE_MUSIC":
-                    music_on = not music_on
-                    if music_on:
-                        pygame.mixer.music.play(loops=-1)
-                        pygame.mixer.music.set_volume(music_volume)
-                    else:
-                        pygame.mixer.music.stop()
+                    self.settings.toggle_music()
                     return None
                 elif action == "VOLUME_SLIDER":
                      # Do nothing, volume is adjusted with arrows only
@@ -212,11 +367,9 @@ class Menu:
             # Left/Right for adjusting volume if slider is selected
             elif self.buttons[self.current_selection]["action"] == "VOLUME_SLIDER":
                 if event.key == K_LEFT:
-                    music_volume = max(0.0, music_volume - 0.05)
-                    pygame.mixer.music.set_volume(music_volume)
+                    self.settings.set_volume(self.settings.music_volume - 0.05)
                 elif event.key == K_RIGHT:
-                    music_volume = min(1.0, music_volume + 0.05)
-                    pygame.mixer.music.set_volume(music_volume)
+                    self.settings.set_volume(self.settings.music_volume + 0.05)
 
         elif event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
@@ -229,10 +382,8 @@ class Menu:
 
         return None
 
-
-
 # SORTIR cette fonction de la classe Menu !
-def init_menus():
+def init_menus(settings):
     # Vérifier que les fichiers existent
     import os
     
@@ -249,31 +400,35 @@ def init_menus():
         else:
             print(f"✗ Fichier MANQUANT : {img_file}")
     
-    main_menu = Menu("wordsGame/contagium.png")
+    main_menu = Menu(settings, "wordsGame/contagium.png")
     main_menu.add_button("Jouer", STATE_PLAY)
     main_menu.add_button("Options", STATE_OPTIONS)
     main_menu.add_button("Quitter", "QUIT")
     
-    pause_menu = Menu("wordsGame/playPause.png")
+    pause_menu = Menu(settings, "wordsGame/playPause.png")
     pause_menu.add_button("Reprendre", STATE_PLAY)
     pause_menu.add_button("Options", STATE_OPTIONS)
     pause_menu.add_button("Menu Principal", STATE_MENU)
     pause_menu.add_button("Quitter", "QUIT")
     
-    options_menu = Menu("wordsGame/options.png")
+    options_menu = Menu(settings, "wordsGame/options.png")
     options_menu.add_button("Music: ON", "TOGGLE_MUSIC")
     options_menu.add_button("Volume", "VOLUME_SLIDER")
+    options_menu.add_button("Contrôles", "CONTROLS")
     options_menu.add_button("Retour", "BACK")
     
-    game_over_menu = Menu("wordsGame/gameOver.png")
+    game_over_menu = Menu(settings, "wordsGame/gameOver.png")
     game_over_menu.add_button("Rejouer", STATE_PLAY)
     game_over_menu.add_button("Menu Principal", STATE_MENU)
     game_over_menu.add_button("Quitter", "QUIT")
+    
+    controls_menu = ControlsMenu(settings)
     
     return {
         STATE_MENU: main_menu,
         STATE_PAUSE: pause_menu,
         STATE_OPTIONS: options_menu,
+<<<<<<< HEAD
         STATE_GAME_OVER: game_over_menu
     }
 
@@ -306,3 +461,8 @@ def menu_events(btns):
                 if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
                     return i
     return None
+=======
+        STATE_GAME_OVER: game_over_menu,
+        "CONTROLS": controls_menu
+    }
+>>>>>>> b1da706 (mise des settings avec la manettes non testé)

@@ -30,3 +30,11 @@ GREEN = (0, 255, 0)
 pygame.init()
 FONT = pygame.font.SysFont("Arial", 36)
 
+# Configuration des touches par défaut
+DEFAULT_CONTROLS = {
+    "move_up": {"keyboard": [pygame.K_UP, pygame.K_z], "gamepad": []},  # Bouton 1 = Triangle/Y
+    "move_down": {"keyboard": [pygame.K_DOWN, pygame.K_s], "gamepad": []},  # Bouton 0 = X/A
+    "move_left": {"keyboard": [pygame.K_LEFT, pygame.K_q], "gamepad": []},  # Pas de bouton par défaut, utilise les sticks
+    "move_right": {"keyboard": [pygame.K_RIGHT, pygame.K_d], "gamepad": []},
+    "attack": {"keyboard": [pygame.K_SPACE], "gamepad": [1]}
+}
