@@ -117,8 +117,8 @@ class Menu:
             # Réduire l'image à 80% de sa taille
             original_width = self.title_image.get_width()
             original_height = self.title_image.get_height()
-            new_width = int(original_width * 0.7)
-            new_height = int(original_height * 0.7)
+            new_width = int(original_width * 0.4)
+            new_height = int(original_height * 0.4)
             
             # Redimensionner l'image
             scaled_title_image = pygame.transform.scale(self.title_image, (new_width, new_height))
@@ -200,7 +200,7 @@ def init_menus():
     pause_menu.add_button("Menu Principal", STATE_MENU)
     pause_menu.add_button("Quitter", "QUIT")
     
-    options_menu = Menu()
+    options_menu = Menu("wordsGame/options.png")
     options_menu.add_button("Retour", "BACK")
     
     game_over_menu = Menu("wordsGame/gameOver.png")
