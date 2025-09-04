@@ -73,7 +73,7 @@ class InfoHUD:
                     p.update()
                     p.draw(screen)
 
-        txt = self.font.render(f"Médicaments : {self.meds_collected}", True, (10, 10, 10))
+        txt = self.font.render(f"Médicaments : {self.meds_collected}", True, (255,255,255))
         screen.blit(txt, (30, 70))
 
     def draw_heart(self, surface, x, y, size, color):

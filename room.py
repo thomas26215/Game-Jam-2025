@@ -46,11 +46,9 @@ class MapLoader:
 
 
 class Room:
-    def __init__(self, position, color=(50, 50, 50), description="Salle",
+    def __init__(self, position,
                  nb_medicaments=10, nb_ennemis=None):
         self.position = position
-        self.color = color
-        self.description = description
 
         self.doors = []
         self.enemies = []
@@ -109,8 +107,11 @@ class Room:
             directions.append('right')
 
         # Génération du nom de TMX selon les directions
+
+        # Génération du nom de TMX selon les directions, dans l'ordre left, right, up, down
         if directions:
-            directions_sorted = sorted(directions)
+            priority = ['left', 'right', 'up', 'down']
+            directions_sorted = sorted(directions, key=lambda d: priority.index(d))
             self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
         else:
             self.tmx_file = None
@@ -196,7 +197,6 @@ class Room:
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
 
-        surface.blit(FONT.render(self.description, True, (255, 255, 255)), (20, 20))
 
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0), door)
