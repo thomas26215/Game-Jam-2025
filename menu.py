@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 from config import (
-    SCREEN_WIDTH,
+    SCREEN_WIDTH, SCREEN_HEIGHT,
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
@@ -12,20 +12,117 @@ class Menu:
         self.buttons = []
         self.current_selection = 0
         
+        # Charger l'image de fond avec debug
+        print("Tentative de chargement de right.png...")
+        try:
+            self.background = pygame.image.load("right.png").convert()
+            self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+            print("✓ right.png chargé avec succès !")
+        except pygame.error as e:
+            print(f"✗ Impossible de charger right.png: {e}")
+            self.background = None
+        except FileNotFoundError:
+            print("✗ Fichier right.png introuvable !")
+            self.background = None
+        
+        # Animation du rat avec debug
+        print("Tentative de chargement de rat/rat_droite.png...")
+        try:
+            self.rat_spritesheet = pygame.image.load("rat/rat_droite.png").convert_alpha()
+            print("✓ rat/rat_droite.png chargé avec succès !")
+            
+            # Pour une spritesheet horizontale avec 55 frames de 240px de large
+            self.rat_frame_width = 240
+            self.rat_frame_height = self.rat_spritesheet.get_height()  # Hauteur complète de l'image
+            self.rat_frames = []
+
+            # Extraire les 27 premières frames horizontales
+            for i in range(12, 37):
+                frame = pygame.Surface((self.rat_frame_width, self.rat_frame_height), pygame.SRCALPHA)
+                frame.blit(self.rat_spritesheet, (0, 0), (i * self.rat_frame_width, 0, self.rat_frame_width, self.rat_frame_height))
+                self.rat_frames.append(frame)
+            
+            print(f"✓ {len(self.rat_frames)} frames extraites du sprite !")
+            self.rat_current_frame = 0
+            self.rat_animation_timer = 0
+            self.rat_animation_speed = 100  # millisecondes entre chaque frame
+            
+            # Position et mouvement du rat
+            self.rat_x = SCREEN_WIDTH // 2 - self.rat_frame_width // 2  # Commence au centre
+            self.rat_y = SCREEN_HEIGHT // 2 - self.rat_frame_height // 2  # Milieu vertical
+            self.rat_speed = 250  # pixels par seconde
+            self.rat_direction = 1  # 1 pour droite, -1 pour gauche
+            self.rat_visible = True  # Ajouter cette variable pour contrôler la visibilité
+
+            
+        except pygame.error as e:
+            print(f"✗ Impossible de charger rat/rat_droite.png: {e}")
+            self.rat_spritesheet = None
+        except FileNotFoundError:
+            print("✗ Fichier rat/rat_droite.png introuvable !")
+            self.rat_spritesheet = None
+        
     def add_button(self, text, action):
         button_surface = FONT.render(text, True, (255, 255, 255))
         self.buttons.append({"text": text, "surface": button_surface, "action": action})
     
+    def update(self, dt):
+        # Mettre à jour l'animation du rat
+        if self.rat_spritesheet and self.rat_frames and self.rat_visible:
+            # Animation des frames
+            self.rat_animation_timer += dt
+            if self.rat_animation_timer >= self.rat_animation_speed:
+                self.rat_animation_timer = 0
+                self.rat_current_frame = (self.rat_current_frame + 1) % len(self.rat_frames)
+            
+            # Mouvement du rat - disparaît quand il touche la droite
+            if self.rat_x < SCREEN_WIDTH - self.rat_frame_width:
+                self.rat_x += self.rat_speed * (dt / 1000.0)
+            else:
+                # Le rat a atteint le bord droit, il disparaît
+                self.rat_visible = False
+
     def draw(self, surface):
-        surface.fill((30, 30, 30))
-        title = FONT.render("Contagium", True, (255, 255, 0))
-        surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
+        # Dessiner le fond
+        if self.background:
+            surface.blit(self.background, (0, 0))
+        else:
+            surface.fill((30, 30, 30))
         
+        # Dessiner le rat animé seulement s'il est visible
+        if self.rat_spritesheet and self.rat_frames and self.rat_visible:
+            current_rat_frame = self.rat_frames[self.rat_current_frame]
+            
+            # Flip horizontal si le rat va vers la gauche
+            if self.rat_direction == -1:
+                current_rat_frame = pygame.transform.flip(current_rat_frame, True, False)
+                
+            surface.blit(current_rat_frame, (int(self.rat_x), int(self.rat_y)))
+        
+        # Titre avec fond semi-transparent pour la lisibilité
+        title = FONT.render("Contagium", True, (255, 255, 0))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 120))
+        # Fond semi-transparent pour le titre
+        title_bg = pygame.Surface((title.get_width() + 20, title.get_height() + 10))
+        title_bg.set_alpha(128)
+        title_bg.fill((0, 0, 0))
+        surface.blit(title_bg, (title_rect.x - 10, title_rect.y - 5))
+        surface.blit(title, title_rect)
+        
+        # Boutons avec fond semi-transparent (TOUJOURS affichés)
         for i, button in enumerate(self.buttons):
             color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
             button_surface = FONT.render(button["text"], True, color)
             y_pos = 280 + i * 100
-            surface.blit(button_surface, (SCREEN_WIDTH // 2 - button_surface.get_width() // 2, y_pos))
+            button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+            
+            # Fond semi-transparent pour les boutons
+            button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
+            button_bg.set_alpha(128)
+            button_bg.fill((0, 0, 0))
+            surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
+            surface.blit(button_surface, button_rect)
+
     
     def handle_event(self, event):
         if event.type == KEYDOWN:
@@ -45,7 +142,8 @@ class Menu:
                     return button["action"]
         return None
 
-# Initialisation des menus
+
+# SORTIR cette fonction de la classe Menu !
 def init_menus():
     main_menu = Menu()
     main_menu.add_button("Jouer", STATE_PLAY)
