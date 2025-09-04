@@ -420,10 +420,10 @@ def main():
                 med.draw(screen)
 
             # Ombre dynamique
-            shadow_surface.fill((0, 0, 0, 200))
+            shadow_surface.fill((0, 0, 0, 255))
             for r in range(VISION_RADIUS, 0, -2):
                 t = r / VISION_RADIUS
-                alpha = int(200 * (1 - (1 - t) ** 3))
+                alpha = int(255 * (1 - (1 - t) ** 3))
                 pygame.draw.circle(shadow_surface, (0, 0, 0, alpha), player.rect.center, r)
             screen.blit(shadow_surface, (0, 0))
 
