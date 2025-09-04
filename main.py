@@ -2,11 +2,12 @@
 import pygame
 from infos_hud import InfoHUD
 from enemy import Enemy
+from portail import Portail
 from medicament import Medicament
-from room import Room
+from room import Room, generate_random_grid
 from player import Player
 import random
-from menu import init_menus, Menu
+from menu import Menu, menu_events, init_menus,draw_menu
 import sys
 from pygame.locals import *
 from config import (
@@ -61,142 +62,9 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
         pygame.draw.rect(surface, color, (x, y, MINIMAP_SCALE - 2, MINIMAP_SCALE - 2))
 
 
-def draw_menu():
-    screen.fill((30, 30, 30))
-    title = FONT.render("Contagium", True, (255, 255, 0))
-    play_btn = FONT.render("Jouer", True, (255, 255, 255))
-    quit_btn = FONT.render("Quitter", True, (255, 255, 255))
-    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
-    screen.blit(play_btn, (SCREEN_WIDTH // 2 - play_btn.get_width() // 2, 280))
-    screen.blit(quit_btn, (SCREEN_WIDTH // 2 - quit_btn.get_width() // 2, 380))
-    pygame.display.flip()
-    return [(play_btn, 280), (quit_btn, 380)]
 
 
-def menu_events(btns):
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == KEYDOWN and event.key == K_ESCAPE:
-            pygame.quit()
-            sys.exit()
-        if event.type == MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            for i, (btn, y) in enumerate(btns):
-                bx = SCREEN_WIDTH // 2 - btn.get_width() // 2
-                if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
-                    return i
-    return None
 
-def generate_random_grid(num_rooms=6):
-    grid = {}
-    start = (0, 0)
-    # Salle de départ sans TMX
-    grid[start] = Room(
-        position=start,
-        nb_medicaments=1,
-        nb_ennemis=1
-    )
-
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    dx, dy = random.choice(directions)
-    enemy_room_pos = (start[0] + dx, start[1] + dy)
-    grid[enemy_room_pos] = Room(
-        position=enemy_room_pos,
-        nb_medicaments=0,
-        nb_ennemis=2
-    )
-
-    forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
-    forbidden_positions.discard(enemy_room_pos)
-    current_positions = [enemy_room_pos]
-
-    for i in range(2, num_rooms):
-        base = random.choice(current_positions)
-        r, c = base
-        possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-        random.shuffle(possible)
-        for pos in possible:
-            if pos not in grid and pos not in forbidden_positions:
-                grid[pos] = Room(
-                    position=pos,
-                    nb_medicaments=0
-                )
-                current_positions.append(pos)
-                break
-
-    # Salle finale
-    farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
-    final_room = grid[farthest_pos]
-    final_room.nb_enemies_in_room = 8
-    final_room.is_final = True
-
-    # Répartition des médicaments
-    total_meds = 30
-    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
-    for _ in range(total_meds):
-        room = random.choice(all_rooms_except_start)
-        room.nb_medicaments += 1
-
-    # Génération des portes
-    for room in grid.values():
-        room.generate_walls_and_doors(grid)
-
-    return grid
-
-"""
-def generate_random_grid(num_rooms=6):
-    grid = {}
-    start = (0, 0)
-    # Salle de départ sans TMX
-    grid[start] = Room(
-        position=start,
-        nb_medicaments=1,
-        nb_ennemis=1
-    )
-
-    # Première salle ennemis toujours à droite
-    enemy_room_pos = (start[0], start[1] + 1)
-    grid[enemy_room_pos] = Room(
-        position=enemy_room_pos,
-        nb_medicaments=0,
-        nb_ennemis=2
-    )
-
-    current_positions = [enemy_room_pos]
-
-    for i in range(2, num_rooms):
-        base = current_positions[-1]  # toujours partir de la dernière salle
-        r, c = base
-        # On ne crée que des salles à droite
-        new_pos = (r, c + 1)
-        grid[new_pos] = Room(
-            position=new_pos,
-            nb_medicaments=0
-        )
-        current_positions.append(new_pos)
-
-    # Salle finale
-    farthest_pos = max(grid.keys(), key=lambda pos: pos[1])  # salle la plus à droite
-    final_room = grid[farthest_pos]
-    final_room.nb_enemies_in_room = 8
-    final_room.is_final = True
-
-    # Répartition des médicaments
-    total_meds = 30
-    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
-    for _ in range(total_meds):
-        room = random.choice(all_rooms_except_start)
-        room.nb_medicaments += 1
-
-    # Génération des portes
-    for room in grid.values():
-        room.generate_walls_and_doors(grid)
-
-    return grid
-
-"""
 
 
 # --- boucle principale ---
@@ -214,6 +82,12 @@ def main():
     VISION_RADIUS = 300
     has_taken_first_med = False
     visited_rooms = set()
+    portail = Portail(
+        SCREEN_WIDTH // 2 - 100 // 2,  # x centré
+        SCREEN_HEIGHT // 2 - 100 // 2, # y centré
+        100, 100
+    )
+
     
     # Initialisation du jeu
     def init_game():
@@ -448,6 +322,7 @@ def main():
             # --- Dessin ---
             current_room.draw(screen)
             current_room.draw_contents(screen)
+            portail.draw(screen)
             screen.blit(player.image, player.rect)
             # Affichage de la hitbox du joueur (en rouge semi-transparent)
             pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)  # 2 = épaisseur de la bordure
