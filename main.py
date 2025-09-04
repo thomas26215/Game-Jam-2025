@@ -254,9 +254,9 @@ def main():
                         death_spritesheets=["player/death1.png", "player/death2.png"],
                         frame_width=64, frame_height=64)
 
-    current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-    hud = InfoHUD(max_lives=3, current_lives=3)
-    hud.set_poisoned(True)
+        current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
+        hud = InfoHUD(max_lives=3, current_lives=3)
+        hud.set_poisoned(True)
 
         has_taken_first_med = False
         visited_rooms = set()
