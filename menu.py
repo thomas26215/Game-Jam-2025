@@ -5,6 +5,9 @@ from config import (
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
+# --- Options state ---
+music_on = True
+music_volume = 0.5 
 
 # Créer une classe Menu pour une meilleure organisation
 class Menu:
@@ -96,6 +99,16 @@ class Menu:
                 self.rat_visible = False
 
     def draw(self, surface):
+        global music_on, music_volume
+
+        # Update button labels dynamically for options menu
+        for button in self.buttons:
+            if button["action"] == "TOGGLE_MUSIC":
+                button["text"] = f"Music: {'ON' if music_on else 'OFF'}"
+                button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
+            elif button["action"] == "CHANGE_VOLUME":
+                button["text"] = f"Volume: {int(music_volume * 100)}%"
+                button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
         # Dessiner le fond
         if self.background:
             surface.blit(self.background, (0, 0))
@@ -151,15 +164,60 @@ class Menu:
             button_bg.fill((0, 0, 0))
             surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
             surface.blit(button_surface, button_rect)
+            # Draw slider if it's the volume option
+            if button["action"] == "VOLUME_SLIDER":
+                bar_width = 200
+                bar_height = 8
+                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+                bar_y = y_pos + 40
 
+                # Bar background
+                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
+                # Fill based on volume
+                fill_width = int(bar_width * music_volume)
+                pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height))
+
+                # Knob
+                knob_x = bar_x + fill_width - 5
+                knob_y = bar_y - 6
+                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20))
+
+        
     def handle_event(self, event):
+        global music_on, music_volume
+
         if event.type == KEYDOWN:
             if event.key == K_UP:
                 self.current_selection = (self.current_selection - 1) % len(self.buttons)
             elif event.key == K_DOWN:
                 self.current_selection = (self.current_selection + 1) % len(self.buttons)
+
+            # Enter to activate a button
             elif event.key == K_RETURN:
-                return self.buttons[self.current_selection]["action"]
+                action = self.buttons[self.current_selection]["action"]
+                if action == "TOGGLE_MUSIC":
+                    music_on = not music_on
+                    if music_on:
+                        pygame.mixer.music.play(loops=-1)
+                        pygame.mixer.music.set_volume(music_volume)
+                    else:
+                        pygame.mixer.music.stop()
+                    return None
+                elif action == "VOLUME_SLIDER":
+                     # Do nothing, volume is adjusted with arrows only
+                    return None
+                else:
+                    return action
+
+            # Left/Right for adjusting volume if slider is selected
+            elif self.buttons[self.current_selection]["action"] == "VOLUME_SLIDER":
+                if event.key == K_LEFT:
+                    music_volume = max(0.0, music_volume - 0.05)
+                    pygame.mixer.music.set_volume(music_volume)
+                elif event.key == K_RIGHT:
+                    music_volume = min(1.0, music_volume + 0.05)
+                    pygame.mixer.music.set_volume(music_volume)
+
         elif event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             for i, button in enumerate(self.buttons):
@@ -168,7 +226,9 @@ class Menu:
                 by = 280 + i * 100
                 if bx < mx < bx + button_surface.get_width() and by < my < by + button_surface.get_height():
                     return button["action"]
+
         return None
+
 
 
 # SORTIR cette fonction de la classe Menu !
@@ -201,6 +261,8 @@ def init_menus():
     pause_menu.add_button("Quitter", "QUIT")
     
     options_menu = Menu("wordsGame/options.png")
+    options_menu.add_button("Music: ON", "TOGGLE_MUSIC")
+    options_menu.add_button("Volume", "VOLUME_SLIDER")
     options_menu.add_button("Retour", "BACK")
     
     game_over_menu = Menu("wordsGame/gameOver.png")
