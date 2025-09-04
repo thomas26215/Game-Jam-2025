@@ -192,25 +192,10 @@
 </data>
  </layer>
  <objectgroup id="3" name="Walls" class="walls">
-  <object id="4" type="walls" x="416" y="4">
-   <polygon points="0,0 -94,95 -229,118 -234,140 -337,126 -343,233 -418,219 -415,-6"/>
-  </object>
-  <object id="6" type="walls" x="585" y="2">
-   <polygon points="0,0 109,117 387,111 442,163 439,-2"/>
-  </object>
-  <object id="8" type="walls" x="1" y="400">
-   <polygon points="0,0 15,0 16,29 139,189 227,195 379,290 -1,290"/>
-  </object>
-  <object id="9" type="walls" x="1023" y="524">
-   <polygon points="0,0 -192,163 4,164"/>
-  </object>
   <object id="11" type="walls" x="1007" y="113" width="19" height="174"/>
   <object id="12" type="walls" x="1" y="188" width="15" height="100"/>
   <object id="13" type="walls" x="341" y="671" width="124" height="17"/>
   <object id="14" type="walls" x="561" y="670" width="348" height="18"/>
   <object id="15" type="walls" x="1009" y="401" width="17" height="287"/>
-  <object id="17" type="walls" x="270" y="190">
-   <polygon points="0,0 13,198 23,198 28,277 171,278 173,196 366,196 366,272 502,278 507,197 520,200 532,4"/>
-  </object>
  </objectgroup>
 </map>

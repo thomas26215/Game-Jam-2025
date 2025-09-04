@@ -145,7 +145,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1819,1308,1309,1309,1566,1829,1830,0,0,0,0,0,0,1819,1820,1567,2467,2468,2469,2470,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="3" name="Walls" class="walls" visible="0">
+ <objectgroup id="3" name="Walls" class="walls">
   <object id="8" type="walls" x="-5.20303" y="-8.67172" width="328.658" height="705.011"/>
   <object id="11" type="walls" x="661.652" y="-13.0076" width="361.611" height="262.753"/>
   <object id="13" type="walls" x="690.269" y="234.136" width="336.463" height="111.865"/>
