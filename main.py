@@ -20,8 +20,8 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
-
-
+pygame.mixer.music.load("bruitages/medieval-ambient-236809.mp3")
+pygame.mixer.music.play(loops=-1)
 # --- fonctions utilitaires ---
 def draw_minimap(surface, grid, current_pos, visited_rooms):
     if not visited_rooms:
