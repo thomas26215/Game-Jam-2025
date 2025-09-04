@@ -4,7 +4,7 @@ from infos_hud import InfoHUD
 from enemy import Enemy
 from portail import Portail
 from medicament import Medicament
-from room import Room, generate_random_grid
+from room import Room, generate_random_grid, draw_portal_if_boss_room
 from player import Player
 import random
 from menu import Menu, menu_events, init_menus,draw_menu
@@ -82,11 +82,6 @@ def main():
     VISION_RADIUS = 300
     has_taken_first_med = False
     visited_rooms = set()
-    portail = Portail(
-        SCREEN_WIDTH // 2 - 100 // 2,  # x centré
-        SCREEN_HEIGHT // 2 - 100 // 2, # y centré
-        100, 100
-    )
 
     
     # Initialisation du jeu
@@ -322,7 +317,16 @@ def main():
             # --- Dessin ---
             current_room.draw(screen)
             current_room.draw_contents(screen)
-            portail.draw(screen)
+            
+            # Dessin du portail et interaction
+            on_portal = draw_portal_if_boss_room(screen, current_room, player)
+
+            # Vérifie si le joueur appuie sur E
+            keys = pygame.key.get_pressed()
+            if on_portal and keys[pygame.K_e]:
+                state = "VICTORY"  # ou transition vers la salle suivante / fin
+
+
             screen.blit(player.image, player.rect)
             # Affichage de la hitbox du joueur (en rouge semi-transparent)
             pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)  # 2 = épaisseur de la bordure

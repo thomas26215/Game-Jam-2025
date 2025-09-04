@@ -319,3 +319,28 @@ def generate_random_grid(num_rooms=6):
         room.generate_walls_and_doors(grid)
 
     return grid
+
+def draw_portal_if_boss_room(surface, room, player):
+    """
+    Dessine un portail si la salle est finale et affiche un message si le joueur est dessus.
+    """
+    if hasattr(room, "is_final") and room.is_final:
+        if not hasattr(room, "portail") or room.portail is None:
+            from portail import Portail  # Import ici pour éviter les cycles
+            room.portail = Portail(
+                SCREEN_WIDTH // 2 - 100 // 2,  # x centré
+                SCREEN_HEIGHT // 2 - 100 // 2, # y centré
+                100, 100
+            )
+        # Dessin du portail
+        room.portail.draw(surface)
+
+        # Détection collision joueur-portail
+        if player.hitbox.colliderect(room.portail.rect):
+            message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
+            msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
+            msg_y = room.portail.rect.top - 30
+            surface.blit(message, (msg_x, msg_y))
+            return True  # Le joueur est sur le portail
+    return False
+
