@@ -38,6 +38,10 @@ class Player(pygame.sprite.Sprite):
             self.image.fill((0, 128, 255))
 
         self.rect = self.image.get_rect(center=(x, y))
+        self.hitbox = self.rect.copy()
+        self.hitbox.inflate_ip(-90, -75)  # Ajuste la taille de la hitbox ici
+
+
         self.attack_cooldown = 500  # ms
         self.last_attack_time = 0
         self.hurt_timer = 0
@@ -91,7 +95,7 @@ class Player(pygame.sprite.Sprite):
                 attack_rect.x -= 20
             self.attack_rect = attack_rect
 
-    def update(self, keys):
+    def update(self, keys, current_room):
         """Met à jour le joueur."""
         dx = dy = 0
         self.moving = False
@@ -135,11 +139,33 @@ class Player(pygame.sprite.Sprite):
                 self.moving = True
 
         # Appliquer le mouvement
-        self.rect.x += dx
-        self.rect.y += dy
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
         self.state = "walk" if self.moving else "idle"
+        
+        # --- Gestion des collisions avec les obstacles ---
+        # Test déplacement horizontal
+        self.hitbox.x += dx
+        for obs in current_room.obstacles:
+            if self.hitbox.colliderect(obs):
+                if dx > 0:
+                    self.hitbox.right = obs.left
+                elif dx < 0:
+                    self.hitbox.left = obs.right
+
+        # Test déplacement vertical
+        self.hitbox.y += dy
+        for obs in current_room.obstacles:
+            if self.hitbox.colliderect(obs):
+                if dy > 0:
+                    self.hitbox.bottom = obs.top
+                elif dy < 0:
+                    self.hitbox.top = obs.bottom
+
+        # Synchronise la position de l'image avec la hitbox
+        self.rect.center = self.hitbox.center
+
         self.animate()
+
 
     def animate(self):
         """Gère les animations du joueur."""
@@ -184,4 +210,5 @@ class Player(pygame.sprite.Sprite):
     def draw(self, surface):
         """Affiche le joueur à l'écran."""
         surface.blit(self.image, self.rect)
+        pygame.draw.rect(surface, (255, 0, 0), self.rect, 2)  # Hitbox rouge
 

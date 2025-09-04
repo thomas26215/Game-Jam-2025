@@ -340,7 +340,7 @@ def main():
                 
             # Mise à jour du jeu
             keys = pygame.key.get_pressed()
-            player.update(keys)
+            player.update(keys, current_room)
 
             # --- Vérification défaite (joueur mort) ---
             if player.health <= 0:
@@ -395,12 +395,17 @@ def main():
                         current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
                         if direction == 'up':
                             player.rect.bottom = SCREEN_HEIGHT - 60
+                            player.hitbox.center = player.rect.center
                         elif direction == 'down':
                             player.rect.top = 60
+                            player.hitbox.center = player.rect.center
                         elif direction == 'left':
                             player.rect.right = SCREEN_WIDTH - 60
+                            player.hitbox.center = player.rect.center
                         elif direction == 'right':
                             player.rect.left = 60
+                            player.hitbox.center = player.rect.center
+
                     break
 
             # --- Dessin ---

@@ -32,7 +32,7 @@ class Room:
         self.color = color
         self.description = description
 
-        self.doors = []
+        self.doors = [] 
         self.enemies = []
         self.enemies_data = []
 
@@ -42,12 +42,21 @@ class Room:
         self.medicaments_state = {}
 
         self.obstacles = []
+
         self.map_loader = None
         if tmx_file is not None:
             self.map_loader = MapLoader(tmx_file)
             self.obstacles = self.map_loader.obstacles
 
         self.nb_enemies_in_room = nb_ennemis
+
+        if self.map_loader is not None:
+            walls_layer = self.map_loader.tmx_data.get_layer_by_name("Walls")
+            if walls_layer:
+                for obj in walls_layer:
+                    rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
+                    self.obstacles.append(rect)                
+
 
     def generate_walls_and_doors(self, grid):
         """Génère les portes selon la grille."""
@@ -158,8 +167,8 @@ class Room:
 
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0), door)
-        for obs in self.obstacles:
-            pygame.draw.rect(surface, (100, 100, 100), obs)
+        #for obs in self.obstacles:
+            #pygame.draw.rect(surface, (100, 100, 100), obs)
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:
