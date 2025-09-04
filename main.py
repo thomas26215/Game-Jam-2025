@@ -380,7 +380,7 @@ def main():
 
             # --- Mise à jour des ennemis ---
             for enemy in current_room.enemies:
-                enemy.update()
+                enemy.update(current_room)
 
             # --- Supprimer les ennemis morts ---
             current_room.enemies = [e for e in current_room.enemies if e.alive]

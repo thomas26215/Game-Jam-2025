@@ -42,7 +42,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.walk_frames[0].copy()
         self.rect = self.image.get_rect(center=(x, y))
         self.hitbox = self.rect.copy()
-        self.hitbox.inflate_ip(-40, -40)  
+        self.hitbox.inflate_ip(-90, -75)  
 
         # --- Hitbox réduite pour collisions ---
         hitbox_width = int(self.rect.width * 0.3)
@@ -87,7 +87,7 @@ class Enemy(pygame.sprite.Sprite):
             self.taking_damage = True
             self.current_frame = 0
 
-    def update(self):
+    def update(self , current_room):
         if not self.alive and not self.dying:
             return
 
@@ -117,25 +117,26 @@ class Enemy(pygame.sprite.Sprite):
                         self.direction_timer = random.randint(30, 90)
                     dx_norm, dy_norm = self.random_dx, self.random_dy
 
-                # --- Collision X ---
+                # --- Gestion des collisions avec les obstacles ---
+                # Test déplacement horizontal
                 self.hitbox.x += dx_norm * speed
-                for obs in self.obstacles:
+                for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
                         if dx_norm > 0:
                             self.hitbox.right = obs.left
                         elif dx_norm < 0:
                             self.hitbox.left = obs.right
 
-                # --- Collision Y ---
+                # Test déplacement vertical
                 self.hitbox.y += dy_norm * speed
-                for obs in self.obstacles:
+                for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
                         if dy_norm > 0:
                             self.hitbox.bottom = obs.top
                         elif dy_norm < 0:
                             self.hitbox.top = obs.bottom
 
-                # Synchronise la position du sprite avec la hitbox
+                # Synchronise la position de l'image avec la hitbox
                 self.rect.center = self.hitbox.center
 
                 self.direction = "right" if dx >= 0 else "left"
