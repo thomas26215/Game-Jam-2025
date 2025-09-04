@@ -91,7 +91,7 @@ def generate_random_grid(num_rooms=6):
     # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
-        tmx_file="maps/left_top.tmx",
+        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle de départ",
         nb_medicaments=1,
@@ -103,7 +103,7 @@ def generate_random_grid(num_rooms=6):
     enemy_room_pos = (start[0] + dx, start[1] + dy)
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
-        tmx_file="maps/left_top.tmx",
+        tmx_file="maps/right.tmx",
         color=random_color(),
         description="Salle des ennemis",
         nb_medicaments=0,

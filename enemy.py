@@ -8,7 +8,7 @@ class Enemy(pygame.sprite.Sprite):
                  hit_spritesheet_path=None, death_spritesheet_path=None,
                  frame_width=64, frame_height=64,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
-                 attack_range=1, attack_damage=1):
+                 attack_range=1, attack_damage=1, obstacles=None):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -41,6 +41,8 @@ class Enemy(pygame.sprite.Sprite):
 
         self.image = self.walk_frames[0].copy()
         self.rect = self.image.get_rect(center=(x, y))
+        self.hitbox = self.rect.copy()
+        self.hitbox.inflate_ip(-40, -40)  
 
         # --- Mouvement ---
         self.random_dx = 0
@@ -50,6 +52,8 @@ class Enemy(pygame.sprite.Sprite):
         self.attack_in_progress = False
         self.direction = "right"
         self.damage_applied = False
+        self.obstacles = obstacles if obstacles is not None else []
+
 
     def load_frames(self, path):
         sheet = pygame.image.load(path).convert_alpha()
@@ -102,8 +106,28 @@ class Enemy(pygame.sprite.Sprite):
                         self.random_dy = math.sin(angle)
                         self.direction_timer = random.randint(30, 90)
                     dx_norm, dy_norm = self.random_dx, self.random_dy
-                self.rect.x += dx_norm * speed
-                self.rect.y += dy_norm * speed
+
+                # --- Collision X ---
+                self.hitbox.x += dx_norm * speed
+                for obs in self.obstacles:
+                    if self.hitbox.colliderect(obs):
+                        if dx_norm > 0:
+                            self.hitbox.right = obs.left
+                        elif dx_norm < 0:
+                            self.hitbox.left = obs.right
+
+                # --- Collision Y ---
+                self.hitbox.y += dy_norm * speed
+                for obs in self.obstacles:
+                    if self.hitbox.colliderect(obs):
+                        if dy_norm > 0:
+                            self.hitbox.bottom = obs.top
+                        elif dy_norm < 0:
+                            self.hitbox.top = obs.bottom
+
+                # Synchronise la position du sprite avec la hitbox
+                self.rect.center = self.hitbox.center
+
                 self.direction = "right" if dx >= 0 else "left"
 
         # --- Choix de l'animation ---
