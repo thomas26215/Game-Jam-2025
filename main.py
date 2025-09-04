@@ -327,7 +327,7 @@ def main():
                 continue
 
             # --- Vérification victoire (30 médicaments) ---
-            if hud.meds_collected >= 1:
+            if hud.meds_collected >= 30:
                 state = "VICTORY"
                 continue
 
