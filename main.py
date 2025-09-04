@@ -237,6 +237,8 @@ def main():
 
     current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
     hud = InfoHUD(max_lives=3, current_lives=3)
+    hud.set_poisoned(True)
+
 
     shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     VISION_RADIUS = 300
