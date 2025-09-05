@@ -307,29 +307,87 @@ def draw_credits_menu(surface):
     title = obra_font.render("Crédits", True, (0, 0, 0))
     title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 60))
     surface.blit(title, title_rect)
-    # Texte des crédits
-    credits = [
-        "Game Jam 2025 - Contagium",
-        "",
-        "Développeurs:",
-        "- Quentin Peguin le chef de projet",
-        "- Thomas le développeur en chef",
-        "- Sophie l'artiste",
-        "- Bryan le testeur",
-        "- Maria la designeuse de sprite",
-"",
-        "Remerciements:",
-        "- Les rats de laboratoire",
-        "- Pygame et VS Code",
-        "",
-        "Merci de jouer à notre jeu !"
+
+    # Column headers
+    developers_header = "Développeurs"
+    resources_header = "Ressources externes"
+    header_color = (30, 129, 176)  # HEX #1e81b0
+
+    developers = [
+        "Quentin Peguin - Chef de projet",
+        "Thomas - Développeur en chef",
+        "Sophie - Artiste",
+        "Bryan - Testeur",
+        "Maria - Designeuse de sprite"
     ]
-    for i, line in enumerate(credits):
-        text_surface = obra_font.render(line, True, (0, 0, 0))
-        text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 120 + i * 40))
+    resources = [
+        "Itch.io",
+        "Craftpix.net",
+        "Pixabay",
+        "Pygame et VS Code"
+    ]
+
+    small_font = pygame.font.SysFont("Arial", 26)
+    header_font = pygame.font.SysFont("Arial", 28, bold=True)
+    padding = 20
+    column_spacing = 100
+    line_height = 36
+
+    # Calculate box width and height
+    dev_width = max(small_font.size(line)[0] for line in developers + [developers_header])
+    res_width = max(small_font.size(line)[0] for line in resources + [resources_header])
+    box_width = dev_width + res_width + column_spacing + 2 * padding
+    box_height = max(len(developers), len(resources)) * line_height + line_height + 2 * padding  # +1 line for headers
+
+    start_x = (SCREEN_WIDTH - box_width) // 2
+    start_y = 120
+
+    # Draw background box
+    bg_surface = pygame.Surface((box_width, box_height))
+    bg_surface.set_alpha(180)
+    bg_surface.fill((0, 0, 0))
+    surface.blit(bg_surface, (start_x, start_y))
+
+    # Draw column headers **inside the box**
+    dev_header_surface = header_font.render(developers_header, True, header_color)
+    dev_header_rect = dev_header_surface.get_rect(topleft=(start_x + padding, start_y + padding))
+    surface.blit(dev_header_surface, dev_header_rect)
+
+    res_header_surface = header_font.render(resources_header, True, header_color)
+    # Ensure it is inside the box
+    res_header_rect = res_header_surface.get_rect(
+        topleft=(start_x + padding + dev_width + column_spacing, start_y + padding)
+    )
+    surface.blit(res_header_surface, res_header_rect)
+
+    # Draw column content
+    for i, line in enumerate(developers):
+        text_surface = small_font.render(line, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(topleft=(start_x + padding, start_y + padding + line_height + i * line_height))
         surface.blit(text_surface, text_rect)
-    # Bouton retour stylisé
+
+    for i, line in enumerate(resources):
+        text_surface = small_font.render(line, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(
+            topleft=(start_x + padding + dev_width + column_spacing, start_y + padding + line_height + i * line_height)
+        )
+        surface.blit(text_surface, text_rect)
+
+    # Thank you text below box
+    thanks_text = "Merci d'avoir joué à notre jeu !"
+    thanks_surface = small_font.render(thanks_text, True, (255, 255, 255))
+    thanks_rect = thanks_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 30))
+    surface.blit(thanks_surface, thanks_rect)
+
+    # Return button below the box
     button_text = "Retour"
+    button_font = pygame.font.SysFont("Arial", 32, bold=True)
+    button_surface = button_font.render(button_text, True, (255, 0, 0))
+    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 90))
+    button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
+    button_bg.set_alpha(180)
+    button_bg.fill((0, 0, 0))
+    surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
     button_surface = obra_font.render(button_text, True, (255, 0, 0))
     button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80))
     button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)
