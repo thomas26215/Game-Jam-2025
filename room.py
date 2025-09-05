@@ -269,7 +269,6 @@ def generate_random_grid(num_rooms=6):
 
     return grid
 
-"""
 def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
@@ -320,7 +319,6 @@ def generate_random_grid(num_rooms=6):
 
     return grid
 
-"""
 
 def draw_portal_if_boss_room(surface, room, player, settings):
     """
