@@ -103,7 +103,6 @@ class Room:
             self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
             directions.append('right')
 
-        # Génération du nom de TMX selon les directions
 
         # Génération du nom de TMX selon les directions, dans l'ordre left, right, up, down
         if directions:
@@ -127,7 +126,7 @@ class Room:
                 self.nb_enemies_in_room = random.randint(1, 4)
 
             spawn_margin = 250  # marge en pixels pour éviter l'apparition trop proche des portes
-            wall_margin = 20    # marge pour éviter les murs
+            wall_margin = 20    # marge pour les murs
 
             for _ in range(self.nb_enemies_in_room):
                 while True:
