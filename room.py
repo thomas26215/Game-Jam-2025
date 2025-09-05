@@ -232,7 +232,7 @@ def generate_random_grid(num_rooms=3):
     start = (0, 0)
 
     # Salle de départ
-    grid[start] = Room(position=start, nb_medicaments=1, nb_ennemis=1)
+    grid[start] = Room(position=start, nb_medicaments=1, nb_ennemis=0)
     grid[start].generate_walls_and_doors(grid, forced_doors=['right'])
 
     # Salle à droite du départ
