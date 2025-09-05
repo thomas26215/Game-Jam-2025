@@ -175,9 +175,9 @@ class ControlsMenu:
         # Navigation au joystick (stick analogique vertical)
         elif event.type == JOYAXISMOTION:
             if event.axis == 1:
-                if event.value < -0.5:  # stick vers le haut
+                if event.value < -0.999999:  # stick vers le haut
                     self.current_selection = (self.current_selection - 1) % len(self.buttons)
-                elif event.value > 0.5:  # stick vers le bas
+                elif event.value > 0.999999:  # stick vers le bas
                     self.current_selection = (self.current_selection + 1) % len(self.buttons)
 
         # Navigation à la croix directionnelle (D-Pad)

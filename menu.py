@@ -91,7 +91,7 @@ class Menu:
                 self.rat_current_frame = (self.rat_current_frame + 1) % len(self.rat_frames)
             
             # Mouvement du rat - disparaît quand il touche la droite
-            if self.rat_x < SCREEN_WIDTH - self.rat_frame_width:
+            if self.rat_x < SCREEN_WIDTH:
                 self.rat_x += self.rat_speed * (dt / 1000.0)
             else:
                 # Le rat a atteint le bord droit, il disparaît
@@ -205,11 +205,11 @@ class Menu:
         # ---- NOUVEAU : navigation au joystick ----
         elif event.type == JOYAXISMOTION:
             # Axe 1 = vertical sur la plupart des pads
-            if event.axis == 1:
-                if event.value < -0.5:  # stick vers le haut
-                    self.current_selection = (self.current_selection - 1) % len(self.buttons)
-                elif event.value > 0.5:  # stick vers le bas
-                    self.current_selection = (self.current_selection + 1) % len(self.buttons)
+                if event.axis == 1:
+                    if event.value < -0.999999:  # stick vers le haut (très peu sensible)
+                        self.current_selection = (self.current_selection - 1) % len(self.buttons)
+                    elif event.value > 0.999999:  # stick vers le bas (très peu sensible)
+                        self.current_selection = (self.current_selection + 1) % len(self.buttons)
 
         elif event.type == JOYHATMOTION:
             # event.value = (x, y) => y = 1 haut, -1 bas
