@@ -79,7 +79,7 @@ class GameManager:
         self.VISION_RADIUS = self.settings.vision_radius
 
     def init_game(self):
-        self.grid = generate_random_grid(num_rooms=10)
+        self.grid = generate_random_grid(num_rooms=3)
         self.current_pos = (0, 0)
         self.current_room = self.grid[self.current_pos]
 
@@ -123,7 +123,7 @@ class GameManager:
             attack_rect = self.player.attack_rect
             for enemy in self.current_room.enemies:
                 if enemy.alive and attack_rect.colliderect(enemy.hitbox):
-                    damage = 1 if quest == COLLECT_MEDECINE else 2
+                    damage = 1 if quest == COLLECT_MEDECINE else 3
                     enemy.take_damage(damage=damage)
                     print("quéte:", quest, " - Ennemi touché ! Vie restante :", enemy.health)
                     # On ne touche qu’un ennemi par frame pour éviter multi-hit

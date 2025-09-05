@@ -1,15 +1,16 @@
 import pygame
 import math
 import random
+import os
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, player, screen_width, screen_height,
-                 walk_spritesheet_path, attack_spritesheet_path,
-                 hit_spritesheet_path=None, death_spritesheet_path=None,
+                 sprites_folder,
+                 resurrected_sprites_folder=None,
                  frame_width=64, frame_height=64,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
                  attack_range=1, attack_damage=1, obstacles=None,
-                 alive=True):  # <-- Nouveau paramètre
+                 alive=True, resurrected=False):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -22,17 +23,28 @@ class Enemy(pygame.sprite.Sprite):
         self.attack_range = attack_range
         self.attack_damage = attack_damage
 
-        # --- Vies et états ---
+        # --- États de vie ---
         self.alive = alive
-        self.health = 2 if alive else 0
+        self.dying = False
+        self.resurrected = resurrected
         self.taking_damage = False
-        self.dying = not alive  # Si l'ennemi n'est pas vivant, il est déjà en train de mourir
 
-        # --- Animation ---
-        self.walk_frames = self.load_frames(walk_spritesheet_path)
-        self.attack_frames = self.load_frames(attack_spritesheet_path)
-        self.hit_frames = self.load_frames(hit_spritesheet_path) if hit_spritesheet_path else []
-        self.death_frames = self.load_frames(death_spritesheet_path) if death_spritesheet_path else []
+        # --- PV ---
+        if self.resurrected:
+            self.health = 3
+            self.alive = True
+        elif self.alive:
+            self.health = 2
+        else:
+            self.health = 0
+            self.dying = True
+
+        # --- Animations ---
+        self.walk_frames = self.load_frames_from_folder(sprites_folder, "Walk")
+        self.attack_frames = self.load_frames_from_folder(sprites_folder, "Attack")
+        self.hit_frames = self.load_frames_from_folder(sprites_folder, "Hurt")
+        self.death_frames = self.load_frames_from_folder(sprites_folder, "Dead")
+        self.resurrected_frames = self.load_frames_from_folder(resurrected_sprites_folder, "Walk") if resurrected_sprites_folder else self.walk_frames
 
         self.current_frame = 0
         self.animation_speed = 0.2
@@ -40,10 +52,16 @@ class Enemy(pygame.sprite.Sprite):
         self.hit_animation_speed = 0.15
         self.death_animation_speed = 0.1
 
-        self.image = self.walk_frames[0].copy() if alive else (self.death_frames[0].copy() if self.death_frames else pygame.Surface((frame_width, frame_height)))
+        if self.resurrected:
+            self.image = self.resurrected_frames[0].copy() if self.resurrected_frames else pygame.Surface((frame_width, frame_height))
+        elif self.alive:
+            self.image = self.walk_frames[0].copy()
+        else:
+            self.image = self.death_frames[0].copy() if self.death_frames else pygame.Surface((frame_width, frame_height))
+
         self.rect = self.image.get_rect(center=(x, y))
 
-        # --- Hitbox réduite pour collisions ---
+        # --- Hitbox réduite ---
         hitbox_width = int(self.rect.width * 0.3)
         hitbox_height = int(self.rect.height * 0.4)
         self.hitbox = pygame.Rect(
@@ -61,9 +79,15 @@ class Enemy(pygame.sprite.Sprite):
         self.attack_in_progress = False
         self.direction = "right"
         self.damage_applied = False
-        self.obstacles = obstacles if obstacles is not None else []
+        self.obstacles = obstacles if obstacles else []
 
-    def load_frames(self, path):
+    def load_frames_from_folder(self, folder, action_name):
+        """Charge les frames d'une action depuis un spritesheet."""
+        if not folder:
+            return []
+        path = os.path.join(folder, f"{action_name}.png")
+        if not os.path.exists(path):
+            return []
         sheet = pygame.image.load(path).convert_alpha()
         frames = []
         sheet_width = sheet.get_width()
@@ -74,23 +98,35 @@ class Enemy(pygame.sprite.Sprite):
         return frames
 
     def take_damage(self, damage=1):
-        """Réduit la vie de l'ennemi et lance l'animation de dégâts ou de mort."""
-        if not self.alive or self.dying:
+        """Réduit la vie et gère mort ou résurrection."""
+        if self.resurrected or not self.alive or self.dying:
             return
+
         self.health -= damage
+
         if self.health <= 0:
-            self.dying = True
-            self.current_frame = 0
+            if self.health < 0:
+                # Résurrection
+                self.resurrected = True
+                self.alive = True
+                self.dying = False
+                self.health = 3  # nouvelle vie en mode ressuscité
+                self.current_frame = 0
+            else:
+                # Mort normale
+                self.dying = True
+                self.current_frame = 0
         else:
+            # Animation de coup
             self.taking_damage = True
             self.current_frame = 0
 
     def update(self, current_room):
-        if not self.alive and not self.dying:
+        if not self.alive and not self.dying and not self.resurrected:
             return
 
-        # --- Déplacement ---
-        if not self.dying and not self.taking_damage:
+        # --- Ennemi normal ---
+        if not self.dying and not self.taking_damage and not self.resurrected:
             dx = self.player.hitbox.centerx - self.hitbox.centerx
             dy = self.player.hitbox.centery - self.hitbox.centery
             distance = math.hypot(dx, dy)
@@ -115,28 +151,53 @@ class Enemy(pygame.sprite.Sprite):
                         self.direction_timer = random.randint(30, 90)
                     dx_norm, dy_norm = self.random_dx, self.random_dy
 
-                # --- Gestion des collisions avec les obstacles ---
+                # Collisions
                 self.hitbox.x += dx_norm * speed
                 for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
-                        if dx_norm > 0:
-                            self.hitbox.right = obs.left
-                        elif dx_norm < 0:
-                            self.hitbox.left = obs.right
+                        if dx_norm > 0: self.hitbox.right = obs.left
+                        elif dx_norm < 0: self.hitbox.left = obs.right
 
                 self.hitbox.y += dy_norm * speed
                 for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
-                        if dy_norm > 0:
-                            self.hitbox.bottom = obs.top
-                        elif dy_norm < 0:
-                            self.hitbox.top = obs.bottom
+                        if dy_norm > 0: self.hitbox.bottom = obs.top
+                        elif dy_norm < 0: self.hitbox.top = obs.bottom
 
                 self.rect.center = self.hitbox.center
                 self.direction = "right" if dx >= 0 else "left"
 
-        # --- Choix de l'animation ---
-        if self.dying and self.death_frames:
+        # --- Mode ressuscité ---
+        if self.resurrected and not self.dying:
+            speed = self.speed_far
+            self.direction_timer -= 1
+            if self.direction_timer <= 0:
+                angle = random.uniform(0, math.pi * 2)
+                self.random_dx = math.cos(angle)
+                self.random_dy = math.sin(angle)
+                self.direction_timer = random.randint(30, 90)
+            dx_norm, dy_norm = self.random_dx, self.random_dy
+
+            self.hitbox.x += dx_norm * speed
+            for obs in current_room.obstacles:
+                if self.hitbox.colliderect(obs):
+                    if dx_norm > 0: self.hitbox.right = obs.left
+                    elif dx_norm < 0: self.hitbox.left = obs.right
+
+            self.hitbox.y += dy_norm * speed
+            for obs in current_room.obstacles:
+                if self.hitbox.colliderect(obs):
+                    if dy_norm > 0: self.hitbox.bottom = obs.top
+                    elif dy_norm < 0: self.hitbox.top = obs.bottom
+
+            self.rect.center = self.hitbox.center
+            self.direction = "right" if dx_norm >= 0 else "left"
+
+        # --- Choix des frames ---
+        if self.resurrected:
+            frames = self.resurrected_frames
+            speed = self.animation_speed
+        elif self.dying and self.death_frames:
             frames = self.death_frames
             speed = self.death_animation_speed
         elif self.taking_damage and self.hit_frames:
@@ -152,6 +213,7 @@ class Enemy(pygame.sprite.Sprite):
         # --- Animation ---
         if frames:
             self.current_frame += speed
+
             if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == 3:
                 attack_hitbox = self.hitbox.copy()
                 attack_hitbox.width = self.hitbox.width
@@ -179,13 +241,13 @@ class Enemy(pygame.sprite.Sprite):
                 frame = pygame.transform.flip(frame, True, False)
             self.image = frame
 
-        # --- Limite l'écran ---
+        # --- Limiter à l’écran ---
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
         self.hitbox.center = self.rect.center
 
     def draw(self, surface):
-        if self.alive or self.dying:
+        if self.alive or self.dying or self.resurrected:
             surface.blit(self.image, self.rect)
-            # 🔹 Debug hitbox
+            # Debug hitbox
             pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
 
