@@ -46,18 +46,14 @@ class Enemy(pygame.sprite.Sprite):
 
         # --- Hitbox réduite pour collisions ---
         hitbox_width = int(self.rect.width * 0.3)
-        hitbox_height = int(self.rect.height * 0.5)
-        
-        hitbox_x = self.rect.centerx - hitbox_width // 2
-        hitbox_y = self.rect.bottom - hitbox_height  # ATTENTION : on part du bas
+        hitbox_height = int(self.rect.height * 0.4)
 
         self.hitbox = pygame.Rect(
-            hitbox_x,
-            hitbox_y,
+            self.rect.centerx - hitbox_width // 2,
+            self.rect.centery - hitbox_height // 2,
             hitbox_width,
             hitbox_height
-        )        
-        
+)
         # --- Mouvement ---
         self.random_dx = 0
         self.random_dy = 0
