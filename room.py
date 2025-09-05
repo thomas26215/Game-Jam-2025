@@ -49,6 +49,7 @@ class Room:
         self.position = position
 
         self.doors = []
+        self.total_zombies = 0
         self.enemies = []
         self.enemies_data = []  # Stocke les infos de chaque ennemi, y compris son état vivant et resurrected
 
@@ -226,10 +227,9 @@ class Room:
             med.draw(surface)
 
 
-def generate_random_grid(num_rooms=6):
+def generate_random_grid(num_rooms=10):
     grid = {}
     start = (0, 0)
-    # Salle de départ sans TMX
     grid[start] = Room(
         position=start,
         nb_medicaments=1,
@@ -243,7 +243,7 @@ def generate_random_grid(num_rooms=6):
     grid[enemy_room_pos] = Room(
         position=enemy_room_pos,
         nb_medicaments=0,
-        nb_ennemis=2
+        nb_ennemis=0
     )
     grid[enemy_room_pos].generate_walls_and_doors(grid, forced_doors=['left'])
 
@@ -258,7 +258,11 @@ def generate_random_grid(num_rooms=6):
         random.shuffle(possible)
         for pos in possible:
             if pos not in grid and pos not in forbidden_positions:
-                grid[pos] = Room(position=pos, nb_medicaments=0)
+                grid[pos] = Room(
+                    position=pos,
+                    nb_medicaments=0,
+                    nb_ennemis=0
+                )
                 current_positions.append(pos)
                 break
 
@@ -266,9 +270,26 @@ def generate_random_grid(num_rooms=6):
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
     final_room.is_final = True
-    grid[final_room].generate_walls_and_doors(grid, forced_doors=['left'])
 
-    total_meds = 30
+    # --- Répartition des zombies dans les 9 salles ---
+    normal_rooms = [room for pos, room in grid.items() if pos != start and not getattr(room, "is_final", False)]
+    total_zombies = random.randint(20, 37)
+    zombies_left = total_zombies
+
+    for room in normal_rooms:
+        room.nb_enemies_in_room = 0
+
+    while zombies_left > 0:
+        possible_rooms = [room for room in normal_rooms if room.nb_enemies_in_room < 5]
+        if not possible_rooms:
+            break  
+        room = random.choice(possible_rooms)
+        room.nb_enemies_in_room += 1
+        zombies_left -= 1
+
+    # Répartition des médicaments 
+    total_meds = total_zombies
+    #print("Total zombies:", total_zombies, "=> Médicaments:", total_meds)
     all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
     for _ in range(total_meds):
         room = random.choice(all_rooms_except_start)
@@ -278,7 +299,6 @@ def generate_random_grid(num_rooms=6):
         room.generate_walls_and_doors(grid)
 
     return grid
-
 
 def draw_portal_if_boss_room(surface, room, player, settings):
     if hasattr(room, "is_final") and room.is_final:
