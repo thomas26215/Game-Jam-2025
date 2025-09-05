@@ -298,17 +298,17 @@ def draw_credits_menu(surface):
         surface.blit(background, (0, 0))
     else:
         surface.fill((20, 20, 20))
-    # Charger la police Obra Letra si possible
+
+    # Main title
     try:
-        obra_font = pygame.font.Font("assets/ObraLetra.ttf", 36)
+        obra_font = pygame.font.Font("assets/ObraLetra.ttf", 48)
     except:
-        obra_font = pygame.font.SysFont("Arial", 36)
-    # Titre
+        obra_font = pygame.font.SysFont("Arial", 48, bold=True)
     title = obra_font.render("Crédits", True, (0, 0, 0))
     title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 60))
     surface.blit(title, title_rect)
 
-    # Column headers
+    # Column headers and content
     developers_header = "Développeurs"
     resources_header = "Ressources externes"
     header_color = (30, 129, 176)  # HEX #1e81b0
@@ -333,34 +333,39 @@ def draw_credits_menu(surface):
     column_spacing = 100
     line_height = 36
 
-    # Calculate box width and height
-    dev_width = max(small_font.size(line)[0] for line in developers + [developers_header])
-    res_width = max(small_font.size(line)[0] for line in resources + [resources_header])
-    box_width = dev_width + res_width + column_spacing + 2 * padding
-    box_height = max(len(developers), len(resources)) * line_height + line_height + 2 * padding  # +1 line for headers
+    # Calculate box width properly including headers
+    dev_width = max(small_font.size(line)[0] for line in developers)
+    dev_header_width = header_font.size(developers_header)[0]
+    dev_col_width = max(dev_width, dev_header_width)
+
+    res_width = max(small_font.size(line)[0] for line in resources)
+    res_header_width = header_font.size(resources_header)[0]
+    res_col_width = max(res_width, res_header_width)
+
+    box_width = dev_col_width + res_col_width + column_spacing + 2 * padding
+    box_height = max(len(developers), len(resources)) * line_height + line_height * 2 + 2 * padding  # +1 for headers, +1 for merci text
 
     start_x = (SCREEN_WIDTH - box_width) // 2
     start_y = 120
 
-    # Draw background box
+    # Draw black background box
     bg_surface = pygame.Surface((box_width, box_height))
     bg_surface.set_alpha(180)
     bg_surface.fill((0, 0, 0))
     surface.blit(bg_surface, (start_x, start_y))
 
-    # Draw column headers **inside the box**
+    # Column headers
     dev_header_surface = header_font.render(developers_header, True, header_color)
     dev_header_rect = dev_header_surface.get_rect(topleft=(start_x + padding, start_y + padding))
     surface.blit(dev_header_surface, dev_header_rect)
 
     res_header_surface = header_font.render(resources_header, True, header_color)
-    # Ensure it is inside the box
     res_header_rect = res_header_surface.get_rect(
-        topleft=(start_x + padding + dev_width + column_spacing, start_y + padding)
+        topleft=(start_x + padding + dev_col_width + column_spacing, start_y + padding)
     )
     surface.blit(res_header_surface, res_header_rect)
 
-    # Draw column content
+    # Column content
     for i, line in enumerate(developers):
         text_surface = small_font.render(line, True, (255, 255, 255))
         text_rect = text_surface.get_rect(topleft=(start_x + padding, start_y + padding + line_height + i * line_height))
@@ -369,29 +374,27 @@ def draw_credits_menu(surface):
     for i, line in enumerate(resources):
         text_surface = small_font.render(line, True, (255, 255, 255))
         text_rect = text_surface.get_rect(
-            topleft=(start_x + padding + dev_width + column_spacing, start_y + padding + line_height + i * line_height)
+            topleft=(start_x + padding + dev_col_width + column_spacing, start_y + padding + line_height + i * line_height)
         )
         surface.blit(text_surface, text_rect)
 
-    # Thank you text below box
+    # "Merci d'avoir joué..." inside the box
     thanks_text = "Merci d'avoir joué à notre jeu !"
     thanks_surface = small_font.render(thanks_text, True, (255, 255, 255))
-    thanks_rect = thanks_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 30))
+    thanks_rect = thanks_surface.get_rect(center=(start_x + box_width // 2, start_y + box_height - padding - line_height // 2))
     surface.blit(thanks_surface, thanks_rect)
 
     # Return button below the box
     button_text = "Retour"
-    button_font = pygame.font.SysFont("Arial", 32, bold=True)
+    try:
+        button_font = pygame.font.Font("assets/ObraLetra.ttf", 32)
+    except:
+        button_font = pygame.font.SysFont("Arial", 32, bold=True)
     button_surface = button_font.render(button_text, True, (255, 0, 0))
-    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 90))
-    button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
-    button_bg.set_alpha(180)
-    button_bg.fill((0, 0, 0))
-    surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
-    button_surface = obra_font.render(button_text, True, (255, 0, 0))
-    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80))
+    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 60))
+
     button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)
-    pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+    pygame.draw.rect(button_bg, (0, 0, 0, 180), button_bg.get_rect(), border_radius=12)
     surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
     surface.blit(button_surface, button_rect)
 
