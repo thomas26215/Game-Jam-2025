@@ -126,14 +126,27 @@ class Room:
             if self.nb_enemies_in_room is None:
                 self.nb_enemies_in_room = random.randint(1, 4)
 
+            spawn_margin = 250  # marge en pixels pour éviter l'apparition trop proche des portes
+            wall_margin = 20    # marge pour éviter les murs
+
             for _ in range(self.nb_enemies_in_room):
                 while True:
-                    x = random.randint(50, screen_width - 50)
-                    y = random.randint(50, screen_height - 50)
+                    x = random.randint(spawn_margin, screen_width - spawn_margin)
+                    y = random.randint(spawn_margin, screen_height - spawn_margin)
                     new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
+
+                    # Vérifie la collision avec obstacles et portes
                     collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
-                    if not collision:
+
+                    # Vérifie la marge avec les murs
+                    too_close_to_wall = any(
+                        new_rect.inflate(wall_margin * 2, wall_margin * 2).colliderect(obs)
+                        for obs in self.obstacles
+                    )
+
+                    if not collision and not too_close_to_wall:
                         break
+
                 zombie_number = random.randint(1, 4)
                 self.enemies_data.append({
                     "x": x,
