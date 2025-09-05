@@ -12,6 +12,12 @@ class GameSettings:
             }
         self.music_on = True
         self.music_volume = 0.5
+        self.vision_radius = 300  # Valeur par défaut
+    def set_vision_radius(self, radius):
+        self.vision_radius = max(100, min(600, int(radius)))
+
+    def get_vision_radius(self):
+        return self.vision_radius
     
     def reset_controls(self):
         """Remet les contrôles par défaut."""

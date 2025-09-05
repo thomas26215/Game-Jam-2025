@@ -104,6 +104,8 @@ class Menu:
                 button["text"] = f"Music: {'ON' if self.settings.music_on else 'OFF'}"
             elif button["action"] == "CHANGE_VOLUME":
                 button["text"] = f"Volume: {int(self.settings.music_volume * 100)}%"
+            elif button["action"] == "VISION_SLIDER":
+                button["text"] = f"Vision: {self.settings.vision_radius} px"
         
         # Dessiner le fond
         if self.background:
@@ -185,6 +187,19 @@ class Menu:
                 knob_x = bar_x + fill_width - 5
                 knob_y = bar_y - 6
                 pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
+            # Draw slider for vision radius
+            if button["action"] == "VISION_SLIDER":
+                bar_width = 200
+                bar_height = 8
+                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+                bar_y = y_pos + 40
+                min_radius, max_radius = 100, 600
+                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+                fill_width = int(bar_width * (self.settings.vision_radius - min_radius) / (max_radius - min_radius))
+                pygame.draw.rect(surface, (0, 200, 200), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
+                knob_x = bar_x + fill_width - 5
+                knob_y = bar_y - 6
+                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
         
     def handle_event(self, event):
     # clavier inchangé
@@ -207,6 +222,11 @@ class Menu:
                     self.settings.set_volume(self.settings.music_volume - 0.05)
                 elif event.key == K_RIGHT:
                     self.settings.set_volume(self.settings.music_volume + 0.05)
+            elif self.buttons[self.current_selection]["action"] == "VISION_SLIDER":
+                if event.key == K_LEFT:
+                    self.settings.set_vision_radius(self.settings.vision_radius - 10)
+                elif event.key == K_RIGHT:
+                    self.settings.set_vision_radius(self.settings.vision_radius + 10)
 
         # ---- NOUVEAU : navigation au joystick ----
         elif event.type == JOYAXISMOTION:
@@ -270,6 +290,7 @@ def init_menus(settings):
     options_menu = Menu(settings, "wordsGame/options.png")
     options_menu.add_button("Music: ON", "TOGGLE_MUSIC")
     options_menu.add_button("Volume", "VOLUME_SLIDER")
+    options_menu.add_button("Vision", "VISION_SLIDER")
     options_menu.add_button("Contrôles", "CONTROLS")
     options_menu.add_button("Retour", STATE_BACK)
     

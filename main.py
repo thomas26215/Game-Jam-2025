@@ -76,7 +76,7 @@ class GameManager:
         self.has_taken_first_med = False
 
         self.shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        self.VISION_RADIUS = 300
+        self.VISION_RADIUS = self.settings.vision_radius
 
     def init_game(self):
         self.grid = generate_random_grid(num_rooms=10)
@@ -229,16 +229,17 @@ class GameManager:
         for med in self.current_room.medicaments:
             med.draw(screen)
             
+        vision_radius = self.settings.vision_radius
         if quest == COLLECT_MEDECINE:
             self.shadow_surface.fill((0, 0, 0, 255))
-            for r in range(self.VISION_RADIUS, 0, -2):
-                t = r / self.VISION_RADIUS
+            for r in range(vision_radius, 0, -2):
+                t = r / vision_radius
                 alpha = int(255 * (1 - (1 - t) ** 3))
                 pygame.draw.circle(self.shadow_surface, (0, 0, 0, alpha), self.player.rect.center, r)
         else:
             self.shadow_surface.fill((0, 82, 0, 255))
-            for r in range(self.VISION_RADIUS, 0, -2):
-                t = r / self.VISION_RADIUS
+            for r in range(vision_radius, 0, -2):
+                t = r / vision_radius
                 alpha = int(255 * (1 - (1 - t) ** 3))
                 pygame.draw.circle(self.shadow_surface, (0, 82, 0, alpha), self.player.rect.center, r)
 
