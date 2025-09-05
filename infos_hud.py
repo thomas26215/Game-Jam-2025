@@ -52,6 +52,12 @@ class InfoHUD:
     def add_med(self):
         self.meds_collected += 1
 
+    def use_med(self):
+        if self.meds_collected > 0:
+            self.meds_collected -= 1
+            return True
+        return False
+
     def set_poisoned(self, poisoned=True):
         self.poisoned = poisoned
 

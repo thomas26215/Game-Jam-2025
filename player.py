@@ -1,13 +1,14 @@
 import pygame
 from config import COLLECT_MEDECINE, HEAL_INFECTED
 from pygame.locals import *
+from infos_hud import InfoHUD
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, settings, screen_width=1024, screen_height=700,
                  walk_spritesheet_path=None, idle_spritesheet_path=None,
                  attack_spritesheet_path=None, hurt_spritesheet_path=None,
                  death_spritesheets=None, frame_width=50, frame_height=50,
-                 throw_spritesheet_path=None):
+                 throw_spritesheet_path=None, hud=None):
         super().__init__()
         self.settings = settings
         self.screen_width = screen_width
@@ -19,6 +20,7 @@ class Player(pygame.sprite.Sprite):
         self.health = 3
         self.attack_rect = None
         self.has_hit_enemy = False  
+        self.hud = hud  
 
         # Chargement des animations
         self.walk_frames = self.load_frames(walk_spritesheet_path, frame_width, frame_height) if walk_spritesheet_path else []
@@ -115,7 +117,7 @@ class Player(pygame.sprite.Sprite):
 
         # Lancer potion
         else:
-            if now - self.last_throw_time >= self.throw_cooldown and self.state not in ["attack", "hurt", "dead", "throw"]:
+            if now - self.last_throw_time >= self.throw_cooldown and self.state not in ["attack", "hurt", "dead", "throw"] and self.hud.use_med():
                 self.state = "throw"
                 self.current_frame = 0
                 self.last_throw_time = now

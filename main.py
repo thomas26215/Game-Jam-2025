@@ -83,6 +83,10 @@ class GameManager:
         self.current_pos = (0, 0)
         self.current_room = self.grid[self.current_pos]
 
+
+        self.hud = InfoHUD(max_lives=3, current_lives=3)
+        self.hud.set_poisoned(True)
+
         self.player = Player(
             SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, self.settings,
             SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -92,12 +96,12 @@ class GameManager:
             hurt_spritesheet_path="player/damage.png",
             death_spritesheets=["player/death1.png", "player/death2.png"],
             frame_width=64, frame_height=64,
-            throw_spritesheet_path="player/attack_potion.png"
+            throw_spritesheet_path="player/attack_potion.png",
+            hud = self.hud
         )
+        print("Player initialized at center with health:", self.player.hud.lives_left)
+        
         self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-        self.hud = InfoHUD(max_lives=3, current_lives=3)
-        self.hud.set_poisoned(True)
 
         self.visited_rooms = set()
         self.visited_rooms.add(self.current_pos)
