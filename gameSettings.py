@@ -48,18 +48,3 @@ class GameSettings:
 
 
 
-def menu_events(btns):
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == KEYDOWN and event.key == K_ESCAPE:
-            pygame.quit()
-            sys.exit()
-        if event.type == MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            for i, (btn, y) in enumerate(btns):
-                bx = SCREEN_WIDTH // 2 - btn.get_width() // 2
-                if bx < mx < bx + btn.get_width() and y < my < y + btn.get_height():
-                    return i
-    return None

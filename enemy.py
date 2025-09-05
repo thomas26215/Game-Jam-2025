@@ -195,5 +195,5 @@ class Enemy(pygame.sprite.Sprite):
         if self.alive or self.dying:
             surface.blit(self.image, self.rect)
             # 🔹 Debug hitbox
-            # pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
+            pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
 
