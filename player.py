@@ -138,14 +138,6 @@ class Player(pygame.sprite.Sprite):
         dx = dy = 0
         self.moving = False
 
-        # Attaque au clavier
-        if any(keys[key] for key in self.settings.get_control("attack", "keyboard")):
-            self.attack(1)  # Attaque normale
-
-        # Lancer potion (ex: touche R)
-        if keys[pygame.K_r]:
-            self.attack(2)  # Lancer potion
-
         # Si animation spéciale
         if self.state in ["attack", "hurt", "dead", "throw"]:
             self.animate()
