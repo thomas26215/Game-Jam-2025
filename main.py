@@ -1,12 +1,9 @@
 # --- main.py avec gestion complète des menus ---
 import pygame
 from infos_hud import InfoHUD
-from enemy import Enemy
 from portail import Portail
-from medicament import Medicament
-from room import Room, generate_random_grid, draw_portal_if_boss_room
+from room import generate_random_grid, draw_portal_if_boss_room
 from player import Player
-import random
 from menu import Menu, init_menus
 import sys
 from pygame.locals import *
@@ -16,19 +13,19 @@ from config import (
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
     FONT
 )
-from gameSettings import GameSettings  # Import de ta classe
+from gameSettings import GameSettings
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
 
-# Music setup
+# Musique d'ambiance
 pygame.mixer.music.load("bruitages/medieval-ambient-236809.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(loops=-1)
 
-# --- fonctions utilitaires ---
+# Fonction draw_minimap utilitaire (reste en dehors de GameManager)
 def draw_minimap(surface, grid, current_pos, visited_rooms):
     if not visited_rooms:
         return
@@ -38,7 +35,6 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
     width = (max_c - min_c + 1) * MINIMAP_SCALE
     height = (max_r - min_r + 1) * MINIMAP_SCALE
     x_offset, y_offset = SCREEN_WIDTH - width - MINIMAP_MARGIN, MINIMAP_MARGIN
-
     for (r, c) in visited_rooms:
         room = grid[(r, c)]
         x, y = x_offset + (c - min_c) * MINIMAP_SCALE + MINIMAP_SCALE // 2, \
@@ -50,7 +46,6 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
                 nx = x_offset + (neighbor[1] - min_c) * MINIMAP_SCALE + MINIMAP_SCALE // 2
                 ny = y_offset + (neighbor[0] - min_r) * MINIMAP_SCALE + MINIMAP_SCALE // 2
                 pygame.draw.line(surface, (100, 100, 100), (x, y), (nx, ny), 2)
-
     for (r, c) in visited_rooms:
         room = grid[(r, c)]
         x, y = x_offset + (c - min_c) * MINIMAP_SCALE, y_offset + (r - min_r) * MINIMAP_SCALE
@@ -62,15 +57,159 @@ def draw_minimap(surface, grid, current_pos, visited_rooms):
             color = (200, 200, 200)
         pygame.draw.rect(surface, color, (x, y, MINIMAP_SCALE - 2, MINIMAP_SCALE - 2))
 
+# Classe GameManager centralisant la logique de jeu
+class GameManager:
+    def __init__(self, settings):
+        self.settings = settings
+        self.grid = None
+        self.current_pos = None
+        self.current_room = None
+        self.player = None
+        self.hud = None
+        self.visited_rooms = set()
+        self.has_taken_first_med = False
 
+        self.shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.VISION_RADIUS = 300
 
+    def init_game(self):
+        self.grid = generate_random_grid(num_rooms=10)
+        self.current_pos = (0, 0)
+        self.current_room = self.grid[self.current_pos]
 
+        self.player = Player(
+            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, self.settings,
+            SCREEN_WIDTH, SCREEN_HEIGHT,
+            walk_spritesheet_path="player/walk.png",
+            idle_spritesheet_path="player/idle.png",
+            attack_spritesheet_path="player/attack.png",
+            hurt_spritesheet_path="player/damage.png",
+            death_spritesheets=["player/death1.png", "player/death2.png"],
+            frame_width=64, frame_height=64
+        )
+        self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
 
+        self.hud = InfoHUD(max_lives=3, current_lives=3)
+        self.hud.set_poisoned(True)
 
+        self.visited_rooms = set()
+        self.visited_rooms.add(self.current_pos)
+        self.has_taken_first_med = False
 
+    def update_player(self, keys):
+        self.player.update(keys, self.current_room)
 
-def random_color():
-    return (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+    def check_player_attack(self):
+        if self.player.state == "attack" and hasattr(self.player, "attack_rect") and not self.player.has_hit_enemy:
+            for enemy in self.current_room.enemies:
+                if enemy.alive and self.player.attack_rect.colliderect(enemy.rect):
+                    enemy.take_damage()
+                    self.player.has_hit_enemy = True
+                    break
+
+    def update_enemies(self):
+        for enemy in self.current_room.enemies:
+            enemy.update(self.current_room)
+        self.current_room.enemies = [e for e in self.current_room.enemies if e.alive]
+
+    def update_medicaments(self):
+        for med in self.current_room.medicaments:
+            med.update()
+            if not med.collected and self.player.rect.colliderect(med.rect):
+                med.collect()
+                self.hud.add_med()
+                if self.current_pos == (0, 0):
+                    self.has_taken_first_med = True
+        self.current_room.update_medicaments_state()
+
+    def try_change_room(self):
+        player_points = [
+            self.player.hitbox.topleft,
+            self.player.hitbox.topright,
+            self.player.hitbox.bottomleft,
+            self.player.hitbox.bottomright,
+            self.player.hitbox.midtop,
+            self.player.hitbox.midbottom,
+            self.player.hitbox.midleft,
+            self.player.hitbox.midright
+        ]
+        for direction, door in self.current_room.doors:
+            if any(door.collidepoint(p) for p in player_points):
+                r, c = self.current_pos
+                new_pos = {
+                    'up': (r - 1, c),
+                    'down': (r + 1, c),
+                    'left': (r, c - 1),
+                    'right': (r, c + 1)
+                }.get(direction, self.current_pos)
+
+                if self.current_pos == (0, 0) and not self.has_taken_first_med:
+                    return False
+
+                if new_pos in self.grid:
+                    self.current_pos = new_pos
+                    self.current_room = self.grid[new_pos]
+                    self.visited_rooms.add(new_pos)
+                    self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
+                    self.reposition_player(direction)
+                    return True
+        return False
+
+    def reposition_player(self, direction):
+        if direction == 'up':
+            self.player.rect.bottom = SCREEN_HEIGHT - 60
+        elif direction == 'down':
+            self.player.rect.top = 60
+        elif direction == 'left':
+            self.player.rect.right = SCREEN_WIDTH - 60
+        elif direction == 'right':
+            self.player.rect.left = 60
+        self.player.hitbox.center = self.player.rect.center
+
+    def draw(self, screen):
+        self.current_room.draw(screen)
+        self.current_room.draw_contents(screen)
+
+        on_portal = draw_portal_if_boss_room(screen, self.current_room, self.player, self.settings)
+
+        screen.blit(self.player.image, self.player.rect)
+        pygame.draw.rect(screen, (255, 0, 0), self.player.hitbox, 2)
+
+        for enemy in self.current_room.enemies:
+            enemy.draw(screen)
+            pygame.draw.rect(screen, (255, 0, 0), enemy.rect, 2)
+
+        for med in self.current_room.medicaments:
+            med.draw(screen)
+
+        self.shadow_surface.fill((0, 0, 0, 255))
+        for r in range(self.VISION_RADIUS, 0, -2):
+            t = r / self.VISION_RADIUS
+            alpha = int(255 * (1 - (1 - t) ** 3))
+            pygame.draw.circle(self.shadow_surface, (0, 0, 0, alpha), self.player.rect.center, r)
+
+        screen.blit(self.shadow_surface, (0, 0))
+
+        draw_minimap(screen, self.grid, self.current_pos, self.visited_rooms)
+
+        self.hud.set_lives(self.player.health)
+        self.hud.draw(screen)
+
+        if self.current_pos == (0, 0) and not self.has_taken_first_med:
+            message = FONT.render("Récupérez le médicament pour continuer !", True, (255, 0, 0))
+            msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
+            msg_y = 20
+            screen.blit(message, (msg_x, msg_y))
+
+    def player_on_portal_interact(self):
+        keys = pygame.key.get_pressed()
+        interact_pressed = any(keys[key] for key in self.settings.get_control("interact", "keyboard"))
+        if self.player.joystick and not interact_pressed:
+            interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
+
+        on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
+
+        return on_portal and interact_pressed
 
 
 # --- boucle principale ---
@@ -78,66 +217,35 @@ def main():
     settings = GameSettings()  # Créer l'instance des settings
     state = STATE_MENU
     menus = init_menus(settings)  # Passer les settings aux menus
-    
-    # Initialisation des variables de jeu
-    grid = None
-    current_pos = None
-    current_room = None
-    player = None
-    hud = None
-    shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    VISION_RADIUS = 300
-    has_taken_first_med = False
-    visited_rooms = set()
 
-    
-    # Initialisation du jeu
-    def init_game():
-        nonlocal grid, current_pos, current_room, player, hud, has_taken_first_med, visited_rooms
-        
-        grid = generate_random_grid(num_rooms=10)
-        current_pos, current_room = (0, 0), grid[(0, 0)]
+    game_manager = GameManager(settings)
 
-        player = Player(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, settings,  # Passer les settings au player
-                        SCREEN_WIDTH, SCREEN_HEIGHT,
-                        walk_spritesheet_path="player/walk.png",
-                        idle_spritesheet_path="player/idle.png",
-                        attack_spritesheet_path="player/attack.png",
-                        hurt_spritesheet_path="player/damage.png",
-                        death_spritesheets=["player/death1.png", "player/death2.png"],
-                        frame_width=64, frame_height=64)
-
-        current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-        hud = InfoHUD(max_lives=3, current_lives=3)
-        hud.set_poisoned(True)
-
-        has_taken_first_med = False
-        visited_rooms = set()
-        visited_rooms.add(current_pos)
-    
     running = True
     fade_start_time = None
     fade_duration = 5000  # 5 secondes en millisecondes
+
     while running:
-        dt = clock.tick(60)  # Get delta time for animation
-        
+        dt = clock.tick(60)  # Frame rate
+
         # --- Fondu vers Game Over ---
         if state == "FADE_TO_GAME_OVER":
             if fade_start_time is None:
                 fade_start_time = pygame.time.get_ticks()
             elapsed = pygame.time.get_ticks() - fade_start_time
 
-            # Dessin du jeu figé
-            current_room.draw(screen)
-            current_room.draw_contents(screen)
-            screen.blit(player.image, player.rect)
-            for enemy in current_room.enemies:
+            # Dessin figé
+            game_manager.current_room.draw(screen)
+            game_manager.current_room.draw_contents(screen)
+            screen.blit(game_manager.player.image, game_manager.player.rect)
+            for enemy in game_manager.current_room.enemies:
                 enemy.draw(screen)
-            for med in current_room.medicaments:
+            for med in game_manager.current_room.medicaments:
                 med.draw(screen)
-            draw_minimap(screen, grid, current_pos, visited_rooms)
-            hud.set_lives(player.health)
-            hud.draw(screen)
+
+            draw_minimap(screen, game_manager.grid, game_manager.current_pos, game_manager.visited_rooms)
+
+            game_manager.hud.set_lives(game_manager.player.health)
+            game_manager.hud.draw(screen)
 
             # Fondu noir progressif
             alpha = min(255, int(255 * (elapsed / fade_duration)))
@@ -145,95 +253,82 @@ def main():
             fade_surface.set_alpha(alpha)
             fade_surface.fill((0, 0, 0))
             screen.blit(fade_surface, (0, 0))
+
             pygame.display.flip()
 
             if elapsed >= fade_duration:
                 state = STATE_GAME_OVER
                 fade_start_time = None
             continue
-        
+
         # Gestion des menus
         elif state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
-            # Update menu animation
             menus[state].update(dt)
-            
-            # Dessiner le menu approprié
             menus[state].draw(screen)
             pygame.display.flip()
-            
-            # Gérer les événements du menu
+
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
                     break
-                
+
                 action = menus[state].handle_event(event)
                 if action == "QUIT":
                     running = False
                     break
                 elif action == "BACK":
-                    # Retour au menu précédent
                     if state == STATE_OPTIONS:
                         state = STATE_MENU
                 elif action == "CONTROLS":
                     state = "CONTROLS"
                 elif action is not None:
-                    if action == STATE_PLAY and state == STATE_MENU:
-                        # Nouvelle partie
-                        init_game()
-                    elif action == STATE_PLAY and state == STATE_GAME_OVER:
-                        # Recommencer après un game over
-                        init_game()
+                    if action == STATE_PLAY and state in [STATE_MENU, STATE_GAME_OVER]:
+                        game_manager.init_game()
                     state = action
-        
-        # Menu des contrôles
+
+        # Menu de contrôles
         elif state == "CONTROLS":
             menus["CONTROLS"].draw(screen)
             pygame.display.flip()
-            
+
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
                     break
-                
+
                 action = menus["CONTROLS"].handle_event(event)
                 if action == "BACK":
                     state = STATE_OPTIONS
-        
+
         # État de victoire
         elif state == "VICTORY":
-            # Afficher les boutons du menu de victoire
             if "VICTORY" not in menus:
                 victory_menu = Menu(settings, "wordsGame/victory.png")
                 victory_menu.add_button("Rejouer", STATE_PLAY)
                 victory_menu.add_button("Menu Principal", STATE_MENU)
                 victory_menu.add_button("Quitter", "QUIT")
                 menus["VICTORY"] = victory_menu
-            
-            # Dessiner le menu de victoire avec l'image
+
             menus["VICTORY"].draw(screen)
             pygame.display.flip()
-            
-            # Gérer les événements du menu de victoire
+
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
                     break
-                
+
                 action = menus["VICTORY"].handle_event(event)
                 if action == "QUIT":
                     running = False
                     break
                 elif action == STATE_PLAY:
-                    # Recommencer une nouvelle partie
-                    init_game()
+                    game_manager.init_game()
                     state = STATE_PLAY
                 elif action == STATE_MENU:
                     state = STATE_MENU
-        
+
         # État de jeu normal
         elif state == STATE_PLAY:
-            # --- Gestion des événements ---
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
@@ -241,151 +336,23 @@ def main():
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     state = STATE_PAUSE
                 elif event.type == KEYDOWN and event.key == K_SPACE:
-                    player.attack()
-            
+                    game_manager.player.attack()
+
             if not running:
                 break
-                
-            # Mise à jour du jeu
+
             keys = pygame.key.get_pressed()
-            player.update(keys, current_room)
 
-            # --- Vérification défaite (joueur mort) ---
-            if player.health <= 0:
-                state = "FADE_TO_GAME_OVER"
-                fade_start_time = None
-                continue
+            game_manager.update_player(keys)
+            game_manager.check_player_attack()
+            game_manager.update_enemies()
+            game_manager.update_medicaments()
+            game_manager.try_change_room()
 
-            # --- Vérification victoire (30 médicaments) ---
-            if hud.meds_collected >= 30:
+            game_manager.draw(screen)
+
+            if game_manager.player_on_portal_interact():
                 state = "VICTORY"
-                continue
-
-            # --- Gestion des attaques du joueur ---
-            if player.state == "attack" and hasattr(player, "attack_rect") and not player.has_hit_enemy:
-                for enemy in current_room.enemies:
-                    if enemy.alive and player.attack_rect.colliderect(enemy.rect):
-                        enemy.take_damage()
-                        player.has_hit_enemy = True  # ✅ Empêche les multi-dégâts par attaque
-                        break  # ✅ Un seul ennemi touché par attaque
-
-            # --- Mise à jour des ennemis ---
-            for enemy in current_room.enemies:
-                enemy.update(current_room)
-
-            # --- Supprimer les ennemis morts ---
-            current_room.enemies = [e for e in current_room.enemies if e.alive]
-
-            # --- Médicaments ---
-            for med in current_room.medicaments:
-                med.update()
-                if not med.collected and player.rect.colliderect(med.rect):
-                    med.collect()
-                    hud.add_med()
-                    if current_pos == (0, 0):
-                        has_taken_first_med = True
-
-            current_room.update_medicaments_state()
-
-            # --- Changement de salle ---
-            for direction, door in current_room.doors:
-                # Détection basée sur le centre du joueur
-                # Liste des points de la hitbox du joueur à vérifier
-                player_points = [
-                    player.hitbox.topleft,
-                    player.hitbox.topright,
-                    player.hitbox.bottomleft,
-                    player.hitbox.bottomright,
-                    player.hitbox.midtop,
-                    player.hitbox.midbottom,
-                    player.hitbox.midleft,
-                    player.hitbox.midright
-                ]
-
-                # Vérification collision avec la porte
-                if any(door.collidepoint(p) for p in player_points):
-                    r, c = current_pos
-                    new_pos = {
-                        'up': (r - 1, c),
-                        'down': (r + 1, c),
-                        'left': (r, c - 1),
-                        'right': (r, c + 1)
-                    }.get(direction, current_pos)
-
-                    if current_pos == (0, 0) and not has_taken_first_med:
-                        break
-
-                    if new_pos in grid:
-                        current_pos, current_room = new_pos, grid[new_pos]
-                        visited_rooms.add(current_pos)
-                        current_room.generate_contents(player, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-                        # Repositionnement du joueur selon la direction
-                        if direction == 'up':
-                            player.rect.bottom = SCREEN_HEIGHT - 60
-                        elif direction == 'down':
-                            player.rect.top = 60
-                        elif direction == 'left':
-                            player.rect.right = SCREEN_WIDTH - 60
-                        elif direction == 'right':
-                            player.rect.left = 60
-
-                        # Synchronisation hitbox
-                        player.hitbox.center = player.rect.center
-
-                    break
-
-            # --- Dessin ---
-            current_room.draw(screen)
-            current_room.draw_contents(screen)
-            
-            # Dessin du portail et interaction
-            on_portal = draw_portal_if_boss_room(screen, current_room, player, settings)
-            
-            # Vérifie si le joueur appuie sur les touches d'interaction configurables
-            interact_pressed = False
-            
-            # Vérifier touches clavier d'interaction
-            interact_pressed = any(keys[key] for key in settings.get_control("interact", "keyboard"))
-            
-            # Vérifier boutons manette d'interaction
-            if player.joystick and not interact_pressed:
-                interact_pressed = any(player.joystick.get_button(btn) for btn in settings.get_control("interact", "gamepad"))
-            
-            if on_portal and interact_pressed:
-                state = "VICTORY"  # ou transition vers la salle suivante / fin
-                
-                
-            screen.blit(player.image, player.rect)
-            # Affichage de la hitbox du joueur (en rouge semi-transparent)
-            pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)  # 2 = épaisseur de la bordure
-
-            for enemy in current_room.enemies:
-                enemy.draw(screen)
-                pygame.draw.rect(screen, (255, 0, 0), enemy.rect, 2)  # 2 = épaisseur du contour
-            for med in current_room.medicaments:
-                med.draw(screen)
-
-            # Ombre dynamique
-            shadow_surface.fill((0, 0, 0, 255))
-            for r in range(VISION_RADIUS, 0, -2):
-                t = r / VISION_RADIUS
-                alpha = int(255 * (1 - (1 - t) ** 3))
-                pygame.draw.circle(shadow_surface, (0, 0, 0, alpha), player.rect.center, r)
-            screen.blit(shadow_surface, (0, 0))
-
-            # Minimap + HUD
-            draw_minimap(screen, grid, current_pos, visited_rooms)
-            hud.set_lives(player.health)
-            hud.draw(screen)
-
-
-            # Message tuto
-            if current_pos == (0, 0) and not has_taken_first_med:
-                message = FONT.render("Récupérez le médicament pour continuer !", True, (255, 0, 0))
-                msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
-                msg_y = 20
-                screen.blit(message, (msg_x, msg_y))
 
             pygame.display.flip()
 
@@ -394,3 +361,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

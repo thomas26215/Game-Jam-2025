@@ -213,6 +213,8 @@ class Room:
         for med in self.medicaments:
             med.draw(surface)
 
+
+
 def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
@@ -362,3 +364,6 @@ def draw_portal_if_boss_room(surface, room, player, settings):
             surface.blit(message, (msg_x, msg_y))
             return True  # Le joueur est sur le portail
     return False 
+
+
+
