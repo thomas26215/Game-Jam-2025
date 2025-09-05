@@ -42,19 +42,22 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.walk_frames[0].copy()
         self.rect = self.image.get_rect(center=(x, y))
         self.hitbox = self.rect.copy()
-        self.hitbox.inflate_ip(-90, -75)  
+        self.hitbox.inflate_ip(-80, -75)  
 
         # --- Hitbox réduite pour collisions ---
         hitbox_width = int(self.rect.width * 0.3)
-        hitbox_height = int(self.rect.height * 0.3)
-        hitbox_offset_y = -10  
+        hitbox_height = int(self.rect.height * 0.5)
+        
+        hitbox_x = self.rect.centerx - hitbox_width // 2
+        hitbox_y = self.rect.bottom - hitbox_height  # ATTENTION : on part du bas
+
         self.hitbox = pygame.Rect(
-            self.rect.centerx - hitbox_width // 2,
-            self.rect.centery - hitbox_height // 2,
+            hitbox_x,
+            hitbox_y,
             hitbox_width,
             hitbox_height
-        )
-
+        )        
+        
         # --- Mouvement ---
         self.random_dx = 0
         self.random_dy = 0
