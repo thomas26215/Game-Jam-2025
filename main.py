@@ -17,6 +17,7 @@ from config import (
 from gameSettings import GameSettings
 
 pygame.init()
+pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 pygame.joystick.init()
 for i in range(pygame.joystick.get_count()):

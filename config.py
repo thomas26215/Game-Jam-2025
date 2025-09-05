@@ -36,6 +36,7 @@ GREEN = (0, 255, 0)
 
 # Police
 pygame.init()
+pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 FONT = pygame.font.SysFont("Arial", 36)
 

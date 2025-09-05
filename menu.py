@@ -10,6 +10,7 @@ from config import (
 
 
 pygame.init()
+pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 def scan_joysticks():
     pygame.joystick.quit()
@@ -325,8 +326,9 @@ def draw_credits_menu(surface):
         obra_font = pygame.font.Font("assets/ObraLetra.ttf", 48)
     except:
         obra_font = pygame.font.SysFont("Arial", 48, bold=True)
-    title = obra_font.render("Crédits", True, (0, 0, 0))
-    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 60))
+    title = pygame.image.load("wordsGame/credits.png").convert_alpha()
+    title = pygame.transform.scale(title, (int(title.get_width() * 0.4), int(title.get_height() * 0.4)))
+    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 130))
     surface.blit(title, title_rect)
 
     # Column headers and content
@@ -367,7 +369,7 @@ def draw_credits_menu(surface):
     box_height = max(len(developers), len(resources)) * line_height + line_height * 2 + 2 * padding  # +1 for headers, +1 for merci text
 
     start_x = (SCREEN_WIDTH - box_width) // 2
-    start_y = 120
+    start_y = 200
 
     # Draw black background box
     bg_surface = pygame.Surface((box_width, box_height))

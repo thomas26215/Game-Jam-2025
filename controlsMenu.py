@@ -94,8 +94,9 @@ class ControlsMenu:
             surface.fill((30, 30, 30))
         
         # Titre
-        title = FONT.render("Configuration des contrôles", True, (255, 255, 0))
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 50))
+        title = pygame.image.load("wordsGame/controle.png").convert_alpha()
+        title = pygame.transform.scale(title, (int(title.get_width() * 0.4), int(title.get_height() * 0.4)))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 130))
         surface.blit(title, title_rect)
         
         # Message d'attente
