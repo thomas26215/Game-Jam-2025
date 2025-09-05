@@ -272,8 +272,6 @@ def main():
     while running:
         dt = clock.tick(60)
 
-        print("State:", state)
-
         if state == "FADE_TO_GAME_OVER":
             if fade_start_time is None:
                 fade_start_time = pygame.time.get_ticks()
