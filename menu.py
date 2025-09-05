@@ -252,6 +252,7 @@ def init_menus(settings):
     main_menu = Menu(settings, "wordsGame/contagium.png")
     main_menu.add_button("Jouer", STATE_PLAY)
     main_menu.add_button("Options", STATE_OPTIONS)
+    main_menu.add_button("Crédits", "CREDITS")
     main_menu.add_button("Quitter", "QUIT")
     
     pause_menu = Menu(settings, "wordsGame/playPause.png")
@@ -272,11 +273,67 @@ def init_menus(settings):
     game_over_menu.add_button("Quitter", "QUIT")
     
     controls_menu = controlsMenu.ControlsMenu(settings)
-    
     return {
         STATE_MENU: main_menu,
         STATE_PAUSE: pause_menu,
         STATE_OPTIONS: options_menu,
         STATE_GAME_OVER: game_over_menu,
-        "CONTROLS": controls_menu
+        "CONTROLS": controls_menu,
+    "CREDITS": None  # Géré par fonction
     }
+# --- Fonction d'affichage et gestion du menu crédits ---
+def draw_credits_menu(surface):
+    try:
+        background = pygame.image.load("right.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except:
+        background = None
+    if background:
+        surface.blit(background, (0, 0))
+    else:
+        surface.fill((20, 20, 20))
+    # Titre
+    title = FONT.render("Crédits", True, (255, 255, 0))
+    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 60))
+    surface.blit(title, title_rect)
+    # Texte des crédits
+    credits = [
+        "Game Jam 2025 - Contagium",
+        "",
+        "Développeurs:",
+        "- Quentin Peguin le chef de projet",
+        "- Thomas le développeur en chef",
+        "- Sophie l'artiste",
+        "- Bryan le testeur",
+        "- Maria la designeuse de sprite",
+"",
+        "Remerciements:",
+        "- Les rats de laboratoire",
+        "- Pygame et VS Code",
+        "",
+        "Merci de jouer à notre jeu !"
+    ]
+    for i, line in enumerate(credits):
+        text_surface = FONT.render(line, True, (0, 0, 0))
+        text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 120 + i * 40))
+        surface.blit(text_surface, text_rect)
+    # Bouton retour
+    button_text = "Retour"
+    button_surface = FONT.render(button_text, True, (255, 0, 0))
+    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80))
+    button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
+    button_bg.set_alpha(128)
+    button_bg.fill((0, 0, 0))
+    surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
+    surface.blit(button_surface, button_rect)
+
+def handle_credits_event(event):
+    if event.type == KEYDOWN:
+        if event.key in (K_RETURN, K_ESCAPE):
+            return STATE_MENU
+    elif event.type == JOYBUTTONDOWN:
+        if event.button in (0, 7):
+            return STATE_MENU
+    elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+        return STATE_MENU
+    return None

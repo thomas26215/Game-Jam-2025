@@ -323,14 +323,12 @@ def main():
                     running = False
                     break
                 elif action == STATE_BACK:
-                    # Retour au menu précédent
-                    if state == STATE_OPTIONS:
-                        state = STATE_MENU
+                    state = STATE_MENU
                 elif action == "CONTROLS":
                     state = "CONTROLS"
+                elif action == "CREDITS":
+                    state = "CREDITS"
                 elif action is not None:
-                    if action == STATE_PLAY and state in [STATE_MENU, STATE_GAME_OVER]:
-                        game_manager.init_game()
                     state = action
 
         # Menu de contrôles
@@ -341,11 +339,24 @@ def main():
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
-                    break
 
                 action = menus["CONTROLS"].handle_event(event)
                 if action == STATE_BACK:
-                    state = STATE_OPTIONS
+                    state = STATE_MENU
+
+        # Menu des crédits
+        elif state == "CREDITS":
+            from menu import draw_credits_menu, handle_credits_event
+            draw_credits_menu(screen)
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+
+                action = handle_credits_event(event)
+                if action == STATE_MENU:
+                    state = STATE_MENU
 
         # État de victoire
         elif state == STATE_VICTORY:
