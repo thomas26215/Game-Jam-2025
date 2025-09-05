@@ -105,6 +105,8 @@ class GameManager:
 
     def update_player(self, keys):
         self.player.update(keys, self.current_room)
+      
+        
 
     def check_player_attack(self):
         if self.player.state == "attack" and hasattr(self.player, "attack_rect") and not self.player.has_hit_enemy:
@@ -187,7 +189,7 @@ class GameManager:
         self.visited_rooms.add(self.current_pos)
 
 
-    def draw(self, screen):
+    def draw(self, screen, quest):
         self.current_room.draw(screen)
         self.current_room.draw_contents(screen)
 
@@ -202,12 +204,20 @@ class GameManager:
 
         for med in self.current_room.medicaments:
             med.draw(screen)
-
-        self.shadow_surface.fill((0, 0, 0, 255))
-        for r in range(self.VISION_RADIUS, 0, -2):
-            t = r / self.VISION_RADIUS
-            alpha = int(255 * (1 - (1 - t) ** 3))
-            pygame.draw.circle(self.shadow_surface, (0, 0, 0, alpha), self.player.rect.center, r)
+            
+        if quest == COLLECT_MEDECINE:
+            self.shadow_surface.fill((0, 0, 0, 255))
+            
+            for r in range(self.VISION_RADIUS, 0, -2):
+                t = r / self.VISION_RADIUS
+                alpha = int(255 * (1 - (1 - t) ** 3))
+                pygame.draw.circle(self.shadow_surface, (0, 0, 0, alpha), self.player.rect.center, r)
+        else:
+            self.shadow_surface.fill((0, 82, 0, 255))
+            for r in range(self.VISION_RADIUS, 0, -2):
+                t = r / self.VISION_RADIUS
+                alpha = int(255 * (1 - (1 - t) ** 3))
+                pygame.draw.circle(self.shadow_surface, (0, 82, 0, alpha), self.player.rect.center, r)
 
         screen.blit(self.shadow_surface, (0, 0))
 
@@ -284,20 +294,19 @@ def main():
             game_manager.hud.set_lives(game_manager.player.health)
             game_manager.hud.draw(screen)
 
+            
             # Fondu noir progressif
             alpha = min(255, int(255 * (elapsed / fade_duration)))
             fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             fade_surface.set_alpha(alpha)
             fade_surface.fill((0, 0, 0))
             screen.blit(fade_surface, (0, 0))
-
             pygame.display.flip()
 
             if elapsed >= fade_duration:
                 state = STATE_GAME_OVER
                 fade_start_time = None
             continue
-
         # Gestion des menus
         elif state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
             menus[state].update(dt)
@@ -384,12 +393,16 @@ def main():
             keys = pygame.key.get_pressed()
 
             game_manager.update_player(keys)
+               # --- Vérification défaite (joueur mort) ---
+            if game_manager.player.health <= 0:
+                state = "FADE_TO_GAME_OVER"
+                fade_start_time = None
             game_manager.check_player_attack()
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()
 
-            game_manager.draw(screen)
+            game_manager.draw(screen, quest)
 
             if game_manager.player_on_portal_interact():
                 game_manager.teleport_to_start()
