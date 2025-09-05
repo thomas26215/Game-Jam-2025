@@ -1,28 +1,31 @@
 import pygame
+from config import COLLECT_MEDECINE, HEAL_INFECTED
 from pygame.locals import *
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, settings, screen_width=1024, screen_height=700,
                  walk_spritesheet_path=None, idle_spritesheet_path=None,
                  attack_spritesheet_path=None, hurt_spritesheet_path=None,
-                 death_spritesheets=None, frame_width=50, frame_height=50):
+                 death_spritesheets=None, frame_width=50, frame_height=50,
+                 throw_spritesheet_path=None):
         super().__init__()
-        self.settings = settings  # Référence aux settings
+        self.settings = settings
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.speed = 3.5
+        self.speed = 15
         self.direction = "right"
         self.state = "idle"
         self.moving = False
         self.health = 3
-        self.attack_rect = None  # Hitbox d'attaque
-        self.has_hit_enemy = False  # ✅ Empêche les multi-dégâts par attaque
+        self.attack_rect = None
+        self.has_hit_enemy = False  
 
         # Chargement des animations
         self.walk_frames = self.load_frames(walk_spritesheet_path, frame_width, frame_height) if walk_spritesheet_path else []
         self.idle_frames = self.load_frames(idle_spritesheet_path, frame_width, frame_height) if idle_spritesheet_path else []
         self.attack_frames = self.load_frames(attack_spritesheet_path, frame_width, frame_height) if attack_spritesheet_path else []
         self.hurt_frames = self.load_frames(hurt_spritesheet_path, frame_width, frame_height) if hurt_spritesheet_path else []
+        self.throw_frames = self.load_frames(throw_spritesheet_path, frame_width, frame_height) if throw_spritesheet_path else []
         self.death_frames = []
         if death_spritesheets:
             for path in death_spritesheets:
@@ -40,10 +43,14 @@ class Player(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect(center=(x, y))
         self.hitbox = self.rect.copy()
-        self.hitbox.inflate_ip(-90, -75)  # Ajuste la taille de la hitbox ici
+        self.hitbox.inflate_ip(-90, -75)
 
-        self.attack_cooldown = 500  # ms
+        # Cooldowns
+        self.attack_cooldown = 500  
         self.last_attack_time = 0
+        self.throw_cooldown = 800  
+        self.last_throw_time = 0
+
         self.hurt_timer = 0
 
         # Joystick
@@ -82,44 +89,58 @@ class Player(pygame.sprite.Sprite):
                 self.current_frame = 0
                 self.hurt_timer = pygame.time.get_ticks()
 
-    def attack(self):
-        """Déclenche une attaque si le cooldown est écoulé."""
+    def attack(self, attack_type):
+        """
+        Déclenche une attaque.
+        attack_type == 1 → attaque classique
+        attack_type != 1 → lancer de potion
+        """
         now = pygame.time.get_ticks()
-        if now - self.last_attack_time >= self.attack_cooldown and self.state not in ["attack", "hurt", "dead"]:
-            self.state = "attack"
-            self.current_frame = 0
-            self.last_attack_time = now
-            self.has_hit_enemy = False  # ✅ Réinitialisation du flag
 
-            attack_rect = self.rect.copy()
-            attack_rect.width += 30
-            attack_rect.height += 20
-            if self.direction == "right":
-                attack_rect.x += 20
-            else:
-                attack_rect.x -= 20
-            self.attack_rect = attack_rect
+        # Attaque classique
+        if attack_type == COLLECT_MEDECINE:
+            if now - self.last_attack_time >= self.attack_cooldown and self.state not in ["attack", "hurt", "dead", "throw"]:
+                self.state = "attack"
+                self.current_frame = 0
+                self.last_attack_time = now
+                self.has_hit_enemy = False  
+
+                attack_rect = self.rect.copy()
+                attack_rect.width += 30
+                attack_rect.height += 20
+                if self.direction == "right":
+                    attack_rect.x += 20
+                else:
+                    attack_rect.x -= 20
+                self.attack_rect = attack_rect
+
+        # Lancer potion
+        else:
+            if now - self.last_throw_time >= self.throw_cooldown and self.state not in ["attack", "hurt", "dead", "throw"]:
+                self.state = "throw"
+                self.current_frame = 0
+                self.last_throw_time = now
+                # ⚡ Ici, tu pourras instancier un projectile Potion
 
     def update(self, keys, current_room):
         """Met à jour le joueur."""
         dx = dy = 0
         self.moving = False
 
-        # Attaque avec contrôles configurables (clavier + manette)
-        keyboard_attack = any(keys[key] for key in self.settings.get_control("attack", "keyboard"))
-        gamepad_attack = False
-        if self.joystick:
-            gamepad_attack = any(self.joystick.get_button(btn) for btn in self.settings.get_control("attack", "gamepad"))
-        
-        if keyboard_attack or gamepad_attack:
-            self.attack()
+        # Attaque au clavier
+        if any(keys[key] for key in self.settings.get_control("attack", "keyboard")):
+            self.attack(1)  # Attaque normale
 
-        # Si le joueur est en animation spéciale
-        if self.state in ["attack", "hurt", "dead"]:
+        # Lancer potion (ex: touche R)
+        if keys[pygame.K_r]:
+            self.attack(2)  # Lancer potion
+
+        # Si animation spéciale
+        if self.state in ["attack", "hurt", "dead", "throw"]:
             self.animate()
             return
 
-        # Déplacements clavier avec contrôles configurables
+        # Déplacements clavier
         if any(keys[key] for key in self.settings.get_control("move_up", "keyboard")):
             dy = -self.speed
             self.moving = True
@@ -135,92 +156,7 @@ class Player(pygame.sprite.Sprite):
             self.direction = "right"
             self.moving = True
 
-        # Déplacements manette (boutons + sticks)
-        if self.joystick:
-            # Boutons de déplacement configurables
-            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_up", "gamepad")):
-                dy = -self.speed
-                self.moving = True
-            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_down", "gamepad")):
-                dy = self.speed
-                self.moving = True
-            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_left", "gamepad")):
-                dx = -self.speed
-                self.direction = "left"
-                self.moving = True
-            if any(self.joystick.get_button(btn) for btn in self.settings.get_control("move_right", "gamepad")):
-                dx = self.speed
-                self.direction = "right"
-                self.moving = True
-            
-            # Sticks analogiques (toujours actifs)
-            axis_x = self.joystick.get_axis(0)
-            axis_y = self.joystick.get_axis(1)
-            deadzone = 0.2
-            if abs(axis_x) > deadzone:
-                dx = axis_x * self.speed
-                self.direction = "right" if dx > 0 else "left"
-                self.moving = True
-            if abs(axis_y) > deadzone:
-                dy = axis_y * self.speed
-                self.moving = True
-
-        # Appliquer le mouvement
-        self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
-        self.state = "walk" if self.moving else "idle"
-        
-        # --- Gestion des collisions avec les obstacles ---
-        # Test déplacement horizontal
-        self.hitbox.x += dx
-        for obs in current_room.obstacles:
-            if self.hitbox.colliderect(obs):
-                if dx > 0:
-                    self.hitbox.right = obs.left
-                elif dx < 0:
-                    self.hitbox.left = obs.right
-
-        # Test déplacement vertical
-        self.hitbox.y += dy
-        for obs in current_room.obstacles:
-            if self.hitbox.colliderect(obs):
-                if dy > 0:
-                    self.hitbox.bottom = obs.top
-                elif dy < 0:
-                    self.hitbox.top = obs.bottom
-
-        # Synchronise la position de l'image avec la hitbox
-        self.rect.center = self.hitbox.center
-
-        self.animate()
-        dx = dy = 0
-        self.moving = False
-
-        # Attaque avec contrôles configurables
-        if any(keys[key] for key in self.settings.get_control("attack")) or (self.joystick and self.joystick.get_button(1)):
-            self.attack()
-
-        # Si le joueur est en animation spéciale
-        if self.state in ["attack", "hurt", "dead"]:
-            self.animate()
-            return
-
-        # Déplacements clavier avec contrôles configurables
-        if any(keys[key] for key in self.settings.get_control("move_up")):
-            dy = -self.speed
-            self.moving = True
-        if any(keys[key] for key in self.settings.get_control("move_down")):
-            dy = self.speed
-            self.moving = True
-        if any(keys[key] for key in self.settings.get_control("move_left")):
-            dx = -self.speed
-            self.direction = "left"
-            self.moving = True
-        if any(keys[key] for key in self.settings.get_control("move_right")):
-            dx = self.speed
-            self.direction = "right"
-            self.moving = True
-
-        # Déplacements joystick
+        # Déplacements manette
         if self.joystick:
             axis_x = self.joystick.get_axis(0)
             axis_y = self.joystick.get_axis(1)
@@ -233,12 +169,7 @@ class Player(pygame.sprite.Sprite):
                 dy = axis_y * self.speed
                 self.moving = True
 
-        # Appliquer le mouvement
-        self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
-        self.state = "walk" if self.moving else "idle"
-        
-        # --- Gestion des collisions avec les obstacles ---
-        # Test déplacement horizontal
+        # Collision + mouvement
         self.hitbox.x += dx
         for obs in current_room.obstacles:
             if self.hitbox.colliderect(obs):
@@ -246,8 +177,6 @@ class Player(pygame.sprite.Sprite):
                     self.hitbox.right = obs.left
                 elif dx < 0:
                     self.hitbox.left = obs.right
-
-        # Test déplacement vertical
         self.hitbox.y += dy
         for obs in current_room.obstacles:
             if self.hitbox.colliderect(obs):
@@ -256,9 +185,8 @@ class Player(pygame.sprite.Sprite):
                 elif dy < 0:
                     self.hitbox.top = obs.bottom
 
-        # Synchronise la position de l'image avec la hitbox
         self.rect.center = self.hitbox.center
-
+        self.state = "walk" if self.moving else "idle"
         self.animate()
 
     def animate(self):
@@ -276,14 +204,16 @@ class Player(pygame.sprite.Sprite):
                 self.current_frame = 0
         elif self.state == "dead":
             frames = self.death_frames[0] if self.direction == "right" else self.death_frames[1]
+        elif self.state == "throw":
+            frames = self.throw_frames
         else:
             frames = self.idle_frames
 
         if not frames:
             return
 
-        # Gestion spécifique attaque
-        if self.state == "attack":
+        # Gestion spéciale attaque et lancer
+        if self.state in ["attack", "throw"]:
             if int(self.current_frame) >= len(frames) - 1:
                 self.image = frames[-1].copy()
                 if self.direction == "left":
@@ -305,3 +235,4 @@ class Player(pygame.sprite.Sprite):
         """Affiche le joueur à l'écran."""
         surface.blit(self.image, self.rect)
         pygame.draw.rect(surface, (255, 0, 0), self.rect, 2)  # Hitbox rouge
+

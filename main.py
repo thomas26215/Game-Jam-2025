@@ -11,7 +11,8 @@ from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
     MINIMAP_SCALE, MINIMAP_MARGIN,
     STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_BACK, STATE_VICTORY, STATE_OPTIONS,
-    FONT
+    FONT,
+    COLLECT_MEDECINE, HEAL_INFECTED
 )
 from gameSettings import GameSettings
 
@@ -90,7 +91,8 @@ class GameManager:
             attack_spritesheet_path="player/attack.png",
             hurt_spritesheet_path="player/damage.png",
             death_spritesheets=["player/death1.png", "player/death2.png"],
-            frame_width=64, frame_height=64
+            frame_width=64, frame_height=64,
+            throw_spritesheet_path="player/attack_potion.png"
         )
         self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -250,6 +252,7 @@ class GameManager:
 def main():
     settings = GameSettings()  # Créer l'instance des settings
     state = STATE_MENU
+    quest = COLLECT_MEDECINE
     menus = init_menus(settings)  # Passer les settings aux menus
 
     game_manager = GameManager(settings)
@@ -373,7 +376,7 @@ def main():
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     state = STATE_PAUSE
                 elif event.type == KEYDOWN and event.key == K_SPACE:
-                    game_manager.player.attack()
+                    game_manager.player.attack(quest)
 
             if not running:
                 break
@@ -390,6 +393,7 @@ def main():
 
             if game_manager.player_on_portal_interact():
                 game_manager.teleport_to_start()
+                quest = HEAL_INFECTED
 
             pygame.display.flip()
 
