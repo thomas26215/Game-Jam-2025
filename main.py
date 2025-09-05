@@ -1,4 +1,4 @@
-# --- main.py avec gestion complète des menus ---
+import os
 import pygame
 from infos_hud import InfoHUD
 from portail import Portail
@@ -17,14 +17,30 @@ from config import (
 from gameSettings import GameSettings
 
 pygame.init()
-pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 pygame.joystick.init()
 for i in range(pygame.joystick.get_count()):
     pygame.joystick.Joystick(i).init()
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# --- Infos écran pour calcul du centrage ---
+info = pygame.display.Info()
+
+# Ouvre la fenêtre en plein écran (native)
+screen = pygame.display.set_mode((info.current_w, info.current_h))
 pygame.display.set_caption("Contagium")
+
+# Surface de rendu du jeu à la taille prévue
+game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+# Calcul des coordonnées pour centrer la surface du jeu
+x = (info.current_w - SCREEN_WIDTH) // 2
+y = (info.current_h - SCREEN_HEIGHT) // 2
+
+# Dessine un fond noir puis colle la surface du jeu au centre
+screen.fill((0, 0, 0))
+screen.blit(game_surface, (x, y))
+pygame.display.flip()
+
 clock = pygame.time.Clock()
 
 # Musique d'ambiance
@@ -288,30 +304,46 @@ def main():
 
     while running:
         dt = clock.tick(60)
+        events = pygame.event.get()
+
+        # Gestion globale des événements (fermeture/escape)
+        for event in events:
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                running = False
+                break
+        if not running:
+            break
+
+        # --- Dessin sur la surface logique ---
+        game_surface.fill((0, 0, 0))  # fond noir par défaut
 
         if state == "FADE_TO_GAME_OVER":
             if fade_start_time is None:
                 fade_start_time = pygame.time.get_ticks()
             elapsed = pygame.time.get_ticks() - fade_start_time
 
-            game_manager.current_room.draw(screen)
-            game_manager.current_room.draw_contents(screen)
-            screen.blit(game_manager.player.image, game_manager.player.rect)
+            game_manager.current_room.draw(game_surface)
+            game_manager.current_room.draw_contents(game_surface)
+            game_surface.blit(game_manager.player.image, game_manager.player.rect)
             for enemy in game_manager.current_room.enemies:
-                enemy.draw(screen)
+                enemy.draw(game_surface)
             for med in game_manager.current_room.medicaments:
-                med.draw(screen)
+                med.draw(game_surface)
 
-            draw_minimap(screen, game_manager.grid, game_manager.current_pos, game_manager.visited_rooms)
+            draw_minimap(game_surface, game_manager.grid, game_manager.current_pos, game_manager.visited_rooms)
 
             game_manager.hud.set_lives(game_manager.player.health)
-            game_manager.hud.draw(screen)
+            game_manager.hud.draw(game_surface)
 
             alpha = min(255, int(255 * (elapsed / fade_duration)))
             fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             fade_surface.set_alpha(alpha)
             fade_surface.fill((0, 0, 0))
-            screen.blit(fade_surface, (0, 0))
+            game_surface.blit(fade_surface, (0, 0))
+
+            # --- Affichage centré dans le plein écran ---
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
             pygame.display.flip()
 
             if elapsed >= fade_duration:
@@ -320,11 +352,8 @@ def main():
             continue
 
         elif state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
-            menus[state].update(dt)
-            menus[state].draw(screen)
-            pygame.display.flip()
-
-            for event in pygame.event.get():
+            action = None
+            for event in events:
                 if event.type == QUIT:
                     running = False
                     break
@@ -332,24 +361,32 @@ def main():
                 if action == "QUIT":
                     running = False
                     break
-                elif action == STATE_PLAY:
-                    game_manager.init_game()
-                    state = STATE_PLAY
-                    #print("Démarrage du jeu...")
-                elif action == STATE_BACK:
-                    state = STATE_MENU
-                elif action == "CONTROLS":
-                    state = "CONTROLS"
-                elif action == "CREDITS":
-                    state = "CREDITS"
-                elif action is not None:
-                    state = action
-
-        elif state == "CONTROLS":
-            menus["CONTROLS"].draw(screen)
+            if not running:
+                break
+            if action == STATE_PLAY:
+                game_manager.init_game()
+                state = STATE_PLAY
+            elif action == STATE_BACK:
+                state = STATE_MENU
+            elif action == "CONTROLS":
+                state = "CONTROLS"
+            elif action == "CREDITS":
+                state = "CREDITS"
+            elif action is not None:
+                state = action
+            menus[state].update(dt)
+            menus[state].draw(game_surface)
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
             pygame.display.flip()
 
-            for event in pygame.event.get():
+        elif state == "CONTROLS":
+            menus["CONTROLS"].draw(game_surface)
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
+            pygame.display.flip()
+
+            for event in events:
                 if event.type == QUIT:
                     running = False
                     break
@@ -357,13 +394,14 @@ def main():
                 if action == STATE_BACK:
                     state = STATE_MENU
 
-        # Menu des crédits
         elif state == "CREDITS":
             from menu import draw_credits_menu, handle_credits_event
-            draw_credits_menu(screen)
+            draw_credits_menu(game_surface)
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
             pygame.display.flip()
 
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == QUIT:
                     running = False
 
@@ -378,11 +416,12 @@ def main():
                 victory_menu.add_button("Menu Principal", STATE_MENU)
                 victory_menu.add_button("Quitter", "QUIT")
                 menus[STATE_VICTORY] = victory_menu
-            
-            menus[STATE_VICTORY].draw(screen)
+            menus[STATE_VICTORY].draw(game_surface)
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
             pygame.display.flip()
 
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == QUIT:
                     running = False
                     break
@@ -397,7 +436,7 @@ def main():
                     state = STATE_MENU
 
         elif state == STATE_PLAY:
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == QUIT:
                     running = False
                     break
@@ -421,11 +460,13 @@ def main():
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()
-            game_manager.draw(screen, quest)
+            game_manager.draw(game_surface, quest)
 
             if game_manager.player_on_portal_interact():
                 quest = HEAL_INFECTED
 
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (x, y))
             pygame.display.flip()
 
     pygame.quit()

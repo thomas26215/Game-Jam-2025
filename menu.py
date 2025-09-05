@@ -10,7 +10,6 @@ from config import (
 
 
 pygame.init()
-pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 def scan_joysticks():
     pygame.joystick.quit()

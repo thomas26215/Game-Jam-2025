@@ -32,7 +32,7 @@ class ControlsMenu:
         # Fonction helper pour convertir les codes de touches en noms
         def key_name(key_code):
             key_names = {
-                K_UP: "↑", K_DOWN: "↓", K_LEFT: "←", K_RIGHT: "→",
+                K_UP: "Flèches Haut", K_DOWN: "Flèches Bas", K_LEFT: "Flèches Gauche", K_RIGHT: "Flèches Droite",
                 K_z: "Z", K_q: "Q", K_s: "S", K_d: "D",
                 K_SPACE: "ESPACE", K_RETURN: "ENTRÉE",
                 K_a: "A", K_b: "B", K_c: "C", K_e: "E", K_f: "F",
