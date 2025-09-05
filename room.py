@@ -82,26 +82,26 @@ class Room:
         else:
             self.obstacles = []
 
-    def generate_walls_and_doors(self, grid):
+    def generate_walls_and_doors(self, grid, forced_doors=None):
         """Génère les portes selon la grille et détermine le fichier TMX."""
         self.doors.clear()
         r, c = self.position
         SW, SH = SCREEN_WIDTH, SCREEN_HEIGHT
 
         directions = []
-        if (r - 1, c) in grid:
+       # Normal neighbors
+        if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
             self.doors.append(('up', pygame.Rect(0, 0, SW, DOOR_SIZE)))
             directions.append('up')
-        if (r + 1, c) in grid:
+        if (r + 1, c) in grid or (forced_doors and 'down' in forced_doors):
             self.doors.append(('down', pygame.Rect(0, SH - DOOR_SIZE, SW, DOOR_SIZE)))
             directions.append('down')
-        if (r, c - 1) in grid:
+        if (r, c - 1) in grid or (forced_doors and 'left' in forced_doors):
             self.doors.append(('left', pygame.Rect(0, 0, DOOR_SIZE, SH)))
             directions.append('left')
-        if (r, c + 1) in grid:
+        if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
             self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
             directions.append('right')
-
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
@@ -229,12 +229,23 @@ class Room:
 def generate_random_grid(num_rooms=6):
     grid = {}
     start = (0, 0)
-    grid[start] = Room(position=start, nb_medicaments=1, nb_ennemis=1)
+    # Salle de départ sans TMX
+    grid[start] = Room(
+        position=start,
+        nb_medicaments=1,
+        nb_ennemis=1
+    )
+    grid[start].generate_walls_and_doors(grid, forced_doors=['right'])
 
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     dx, dy = random.choice(directions)
-    enemy_room_pos = (start[0] + dx, start[1] + dy)
-    grid[enemy_room_pos] = Room(position=enemy_room_pos, nb_medicaments=0, nb_ennemis=2)
+    enemy_room_pos = (start[0], start[1] + 1)  # explicitly to the right
+    grid[enemy_room_pos] = Room(
+        position=enemy_room_pos,
+        nb_medicaments=0,
+        nb_ennemis=2
+    )
+    grid[enemy_room_pos].generate_walls_and_doors(grid, forced_doors=['left'])
 
     forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
     forbidden_positions.discard(enemy_room_pos)
@@ -255,6 +266,7 @@ def generate_random_grid(num_rooms=6):
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
     final_room.is_final = True
+    grid[final_room].generate_walls_and_doors(grid, forced_doors=['left'])
 
     total_meds = 30
     all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
