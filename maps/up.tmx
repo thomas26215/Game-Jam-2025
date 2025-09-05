@@ -240,19 +240,13 @@
   <object id="45" x="290.503" y="646.043" width="27.7495" height="26.0152">
    <ellipse/>
   </object>
-  <object id="46" x="962.561" y="292.237" width="30.351" height="26.0152">
-   <ellipse/>
-  </object>
-  <object id="47" x="899.257" y="198.582" width="30.351" height="38.1556">
-   <ellipse/>
-  </object>
   <object id="48" x="803.435" y="138.747" width="56.3662" height="38.1556">
    <ellipse/>
   </object>
   <object id="49" x="656.016" y="72.8424" width="56.3662" height="38.1556">
    <ellipse/>
   </object>
-  <object id="50" x="824.681" y="246.277" width="22.5465" height="76.3111"/>
+  <object id="50" x="824.681" y="266.222" width="22.5465" height="56.3661"/>
   <object id="51" x="783.923" y="287.901" width="40.7571" height="31.2182"/>
   <object id="52" x="848.961" y="287.901" width="32.0854" height="30.351"/>
   <object id="53" x="877.578" y="303.51" width="19.945" height="18.2106"/>
