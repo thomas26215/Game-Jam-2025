@@ -19,20 +19,16 @@ class MapLoader:
     def load(self, tmx_file):
         """Charge le TMX uniquement si le fichier existe."""
         if not tmx_file or not os.path.exists(tmx_file):
-            print(f"No TMX file found or provided: {tmx_file}. Continuing without map.")
             self.tmx_data = None
             self.obstacles = []
             self.width = SCREEN_WIDTH
             self.height = SCREEN_HEIGHT
             return
 
-        print(f"Loading TMX file: {tmx_file}")
         self.tmx_data = pytmx.load_pygame(tmx_file)
         self.width = self.tmx_data.width * self.tmx_data.tilewidth
         self.height = self.tmx_data.height * self.tmx_data.tileheight
         self.obstacles = self._load_obstacles()
-        print(f"Map size: {self.tmx_data.width}x{self.tmx_data.height} tiles")
-        print(f"Loaded {len(self.obstacles)} obstacles from TMX.")
 
     def _load_obstacles(self):
         obstacles = []

@@ -227,7 +227,6 @@ class GameManager:
             interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
         
         on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
-        print(on_portal, interact_pressed)
         
         if on_portal and interact_pressed:
             # Téléporter le joueur dans la salle (0,0) au lieu de terminer

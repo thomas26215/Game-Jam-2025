@@ -66,10 +66,8 @@ class Player(pygame.sprite.Sprite):
                     frames.append(frame)
             return frames
         except pygame.error as e:
-            print(f"Erreur lors du chargement de {path}: {e}")
             return []
         except FileNotFoundError:
-            print(f"Fichier non trouvé: {path}")
             return []
 
     def take_damage(self, amount):

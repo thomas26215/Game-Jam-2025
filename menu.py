@@ -15,10 +15,8 @@ def scan_joysticks():
     pygame.joystick.quit()
     pygame.joystick.init()
     joystick_count = pygame.joystick.get_count()
-    print(f"✓ {joystick_count} joystick(s) détecté(s).")
     for i in range(joystick_count):
         pygame.joystick.Joystick(i).init()
-        print(f"✓ Joystick {i} initialisé : {pygame.joystick.Joystick(i).get_name()}")
 
 
 
@@ -30,37 +28,27 @@ class Menu:
         self.current_selection = 0
         
         # Charger l'image de fond avec debug
-        print("Tentative de chargement de right.png...")
         try:
             self.background = pygame.image.load("right.png").convert()
             self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-            print("✓ right.png chargé avec succès !")
         except pygame.error as e:
-            print(f"✗ Impossible de charger right.png: {e}")
             self.background = None
         except FileNotFoundError:
-            print("✗ Fichier right.png introuvable !")
             self.background = None
         
         # Charger l'image de titre personnalisée
         self.title_image = None
         if title_image_path:
-            print(f"Tentative de chargement de {title_image_path}...")
             try:
                 self.title_image = pygame.image.load(title_image_path).convert_alpha()
-                print(f"✓ {title_image_path} chargé avec succès !")
             except pygame.error as e:
-                print(f"✗ Impossible de charger {title_image_path}: {e}")
                 self.title_image = None
             except FileNotFoundError:
-                print(f"✗ Fichier {title_image_path} introuvable !")
                 self.title_image = None
         
         # Animation du rat avec debug
-        print("Tentative de chargement de rat/rat_droite.png...")
         try:
             self.rat_spritesheet = pygame.image.load("rat/rat_droite.png").convert_alpha()
-            print("✓ rat/rat_droite.png chargé avec succès !")
             
             # Pour une spritesheet horizontale avec 55 frames de 240px de large
             self.rat_frame_width = 240
@@ -73,7 +61,6 @@ class Menu:
                 frame.blit(self.rat_spritesheet, (0, 0), (i * self.rat_frame_width, 0, self.rat_frame_width, self.rat_frame_height))
                 self.rat_frames.append(frame)
             
-            print(f"✓ {len(self.rat_frames)} frames extraites du sprite !")
             self.rat_current_frame = 0
             self.rat_animation_timer = 0
             self.rat_animation_speed = 100  # millisecondes entre chaque frame
@@ -86,10 +73,8 @@ class Menu:
             self.rat_visible = True  # Ajouter cette variable pour contrôler la visibilité
 
         except pygame.error as e:
-            print(f"✗ Impossible de charger rat/rat_droite.png: {e}")
             self.rat_spritesheet = None
         except FileNotFoundError:
-            print("✗ Fichier rat/rat_droite.png introuvable !")
             self.rat_spritesheet = None
         
     def add_button(self, text, action):
@@ -219,7 +204,6 @@ class Menu:
 
         # ---- NOUVEAU : navigation au joystick ----
         elif event.type == JOYAXISMOTION:
-            print(f"[LOG] JOYAXISMOTION détecté : axis={event.axis}, value={event.value}")
             # Axe 1 = vertical sur la plupart des pads
             if event.axis == 1:
                 if event.value < -0.5:  # stick vers le haut
@@ -228,7 +212,6 @@ class Menu:
                     self.current_selection = (self.current_selection + 1) % len(self.buttons)
 
         elif event.type == JOYHATMOTION:
-            print(f"[LOG] JOYHATMOTION détecté : value={event.value}")
             # event.value = (x, y) => y = 1 haut, -1 bas
             if event.value[1] == 1:
                 self.current_selection = (self.current_selection - 1) % len(self.buttons)
@@ -236,7 +219,6 @@ class Menu:
                 self.current_selection = (self.current_selection + 1) % len(self.buttons)
 
         elif event.type == JOYBUTTONDOWN:
-            print(f"[LOG] JOYBUTTONDOWN détecté : button={event.button}")
             # bouton A (0) ou Start (7) pour "valider"
             if event.button in (0, 7):
                 return self.buttons[self.current_selection]["action"]
@@ -266,11 +248,6 @@ def init_menus(settings):
         "./wordsGame/victory.png"
     ]
     
-    for img_file in image_files:
-        if os.path.exists(img_file):
-            print(f"✓ Fichier trouvé : {img_file}")
-        else:
-            print(f"✗ Fichier MANQUANT : {img_file}")
     
     main_menu = Menu(settings, "wordsGame/contagium.png")
     main_menu.add_button("Jouer", STATE_PLAY)
