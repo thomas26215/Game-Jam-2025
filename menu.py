@@ -102,10 +102,8 @@ class Menu:
         for button in self.buttons:
             if button["action"] == "TOGGLE_MUSIC":
                 button["text"] = f"Music: {'ON' if self.settings.music_on else 'OFF'}"
-                button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
             elif button["action"] == "CHANGE_VOLUME":
                 button["text"] = f"Volume: {int(self.settings.music_volume * 100)}%"
-                button["surface"] = FONT.render(button["text"], True, (255, 255, 255))
         
         # Dessiner le fond
         if self.background:
@@ -148,20 +146,28 @@ class Menu:
             surface.blit(title_bg, (title_rect.x - 10, title_rect.y - 5))
             surface.blit(title, title_rect)
         
-        # Boutons avec fond semi-transparent (TOUJOURS affichés)
+        # Charger la police Obra Letra si possible
+        try:
+            obra_font = pygame.font.Font("assets/ObraLetra.ttf", 36)
+        except:
+            obra_font = pygame.font.SysFont("Arial", 36)
+
+        # Boutons stylisés
         for i, button in enumerate(self.buttons):
-            color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
-            button_surface = FONT.render(button["text"], True, color)
+            color =  (0, 150, 0)if i == self.current_selection else (44, 68, 132)
+            text_surface = obra_font.render(button["text"], True, color)
             y_pos = 280 + i * 100
-            button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
-            
-            # Fond semi-transparent pour les boutons
-            button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
-            button_bg.set_alpha(128)
-            button_bg.fill((0, 0, 0))
-            surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
-            surface.blit(button_surface, button_rect)
-            
+            button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+
+
+            # Fond arrondi stylisé
+            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+
+            # Texte
+            surface.blit(text_surface, button_rect)
+
             # Draw slider if it's the volume option
             if button["action"] == "VOLUME_SLIDER":
                 bar_width = 200
@@ -170,15 +176,15 @@ class Menu:
                 bar_y = y_pos + 40
 
                 # Bar background
-                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
+                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
                 # Fill based on volume
                 fill_width = int(bar_width * self.settings.music_volume)
-                pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height))
+                pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
 
                 # Knob
                 knob_x = bar_x + fill_width - 5
                 knob_y = bar_y - 6
-                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20))
+                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
         
     def handle_event(self, event):
     # clavier inchangé
@@ -292,8 +298,13 @@ def draw_credits_menu(surface):
         surface.blit(background, (0, 0))
     else:
         surface.fill((20, 20, 20))
+    # Charger la police Obra Letra si possible
+    try:
+        obra_font = pygame.font.Font("assets/ObraLetra.ttf", 36)
+    except:
+        obra_font = pygame.font.SysFont("Arial", 36)
     # Titre
-    title = FONT.render("Crédits", True, (255, 255, 0))
+    title = obra_font.render("Crédits", True, (0, 0, 0))
     title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 60))
     surface.blit(title, title_rect)
     # Texte des crédits
@@ -314,17 +325,16 @@ def draw_credits_menu(surface):
         "Merci de jouer à notre jeu !"
     ]
     for i, line in enumerate(credits):
-        text_surface = FONT.render(line, True, (0, 0, 0))
+        text_surface = obra_font.render(line, True, (0, 0, 0))
         text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 120 + i * 40))
         surface.blit(text_surface, text_rect)
-    # Bouton retour
+    # Bouton retour stylisé
     button_text = "Retour"
-    button_surface = FONT.render(button_text, True, (255, 0, 0))
+    button_surface = obra_font.render(button_text, True, (255, 0, 0))
     button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80))
-    button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 10))
-    button_bg.set_alpha(128)
-    button_bg.fill((0, 0, 0))
-    surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 5))
+    button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)
+    pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+    surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
     surface.blit(button_surface, button_rect)
 
 def handle_credits_event(event):
