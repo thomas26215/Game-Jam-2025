@@ -105,20 +105,25 @@ class GameManager:
 
     def update_player(self, keys):
         self.player.update(keys, self.current_room)
-      
-        
 
-    def check_player_attack(self):
+    def check_player_attack(self, quest=COLLECT_MEDECINE):
         if self.player.state == "attack" and hasattr(self.player, "attack_rect") and not self.player.has_hit_enemy:
             for enemy in self.current_room.enemies:
                 if enemy.alive and self.player.attack_rect.colliderect(enemy.rect):
-                    enemy.take_damage()
+                    if quest == COLLECT_MEDECINE:
+                        enemy.take_damage(damage=1)
+                    elif quest == HEAL_INFECTED:
+                        enemy.take_damage(damage=2)
                     self.player.has_hit_enemy = True
                     break
 
     def update_enemies(self):
         for enemy in self.current_room.enemies:
             enemy.update(self.current_room)
+        # Mettre à jour l'état dans la salle pour sauvegarder les morts
+        if hasattr(self.current_room, "update_enemies_state"):
+            self.current_room.update_enemies_state()
+        # Supprimer les ennemis morts
         self.current_room.enemies = [e for e in self.current_room.enemies if e.alive]
 
     def update_medicaments(self):
@@ -129,7 +134,8 @@ class GameManager:
                 self.hud.add_med()
                 if self.current_pos == (0, 0):
                     self.has_taken_first_med = True
-        self.current_room.update_medicaments_state()
+        if hasattr(self.current_room, "update_medicaments_state"):
+            self.current_room.update_medicaments_state()
 
     def try_change_room(self):
         player_points = [
@@ -156,6 +162,10 @@ class GameManager:
                     return False
 
                 if new_pos in self.grid:
+                    # 🔹 Sauvegarder l'état des ennemis avant de quitter
+                    if hasattr(self.current_room, "update_enemies_state"):
+                        self.current_room.update_enemies_state()
+                    
                     self.current_pos = new_pos
                     self.current_room = self.grid[new_pos]
                     self.visited_rooms.add(new_pos)
@@ -177,6 +187,10 @@ class GameManager:
 
     def teleport_to_start(self):
         """Ramène le joueur dans la salle (0,0)"""
+        # 🔹 Sauvegarder l'état des ennemis actuels
+        if hasattr(self.current_room, "update_enemies_state"):
+            self.current_room.update_enemies_state()
+        
         self.current_pos = (0, 0)
         self.current_room = self.grid[self.current_pos]
         self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -187,7 +201,6 @@ class GameManager:
 
         # Marquer la salle comme visitée
         self.visited_rooms.add(self.current_pos)
-
 
     def draw(self, screen, quest):
         self.current_room.draw(screen)
@@ -207,7 +220,6 @@ class GameManager:
             
         if quest == COLLECT_MEDECINE:
             self.shadow_surface.fill((0, 0, 0, 255))
-            
             for r in range(self.VISION_RADIUS, 0, -2):
                 t = r / self.VISION_RADIUS
                 alpha = int(255 * (1 - (1 - t) ** 3))
@@ -220,7 +232,6 @@ class GameManager:
                 pygame.draw.circle(self.shadow_surface, (0, 82, 0, alpha), self.player.rect.center, r)
 
         screen.blit(self.shadow_surface, (0, 0))
-
         draw_minimap(screen, self.grid, self.current_pos, self.visited_rooms)
 
         self.hud.set_lives(self.player.health)
@@ -241,46 +252,33 @@ class GameManager:
         on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
         
         if on_portal and interact_pressed:
-            # Téléporter le joueur dans la salle (0,0) au lieu de terminer
-            self.current_pos = (0, 0)
-            self.current_room = self.grid[self.current_pos]
-            self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
-            
-            # Repositionner le joueur au centre
-            self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-            self.player.hitbox.center = self.player.rect.center
-            
-            # Marquer la salle comme visitée
-            self.visited_rooms.add(self.current_pos)
-            
-            return True  # Interaction réussie
+            self.teleport_to_start()
+            return True
         return False
-
-
 
 # --- boucle principale ---
 def main():
-    settings = GameSettings()  # Créer l'instance des settings
+    settings = GameSettings()
     state = STATE_MENU
     quest = COLLECT_MEDECINE
-    menus = init_menus(settings)  # Passer les settings aux menus
+    menus = init_menus(settings)
 
     game_manager = GameManager(settings)
 
     running = True
     fade_start_time = None
-    fade_duration = 5000  # 5 secondes en millisecondes
+    fade_duration = 5000
 
     while running:
-        dt = clock.tick(60)  # Frame rate
+        dt = clock.tick(60)
 
-        # --- Fondu vers Game Over ---
+        print("State:", state)
+
         if state == "FADE_TO_GAME_OVER":
             if fade_start_time is None:
                 fade_start_time = pygame.time.get_ticks()
             elapsed = pygame.time.get_ticks() - fade_start_time
 
-            # Dessin figé
             game_manager.current_room.draw(screen)
             game_manager.current_room.draw_contents(screen)
             screen.blit(game_manager.player.image, game_manager.player.rect)
@@ -294,8 +292,6 @@ def main():
             game_manager.hud.set_lives(game_manager.player.health)
             game_manager.hud.draw(screen)
 
-            
-            # Fondu noir progressif
             alpha = min(255, int(255 * (elapsed / fade_duration)))
             fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             fade_surface.set_alpha(alpha)
@@ -307,7 +303,7 @@ def main():
                 state = STATE_GAME_OVER
                 fade_start_time = None
             continue
-        # Gestion des menus
+
         elif state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER]:
             menus[state].update(dt)
             menus[state].draw(screen)
@@ -317,11 +313,14 @@ def main():
                 if event.type == QUIT:
                     running = False
                     break
-
                 action = menus[state].handle_event(event)
                 if action == "QUIT":
                     running = False
                     break
+                elif action == STATE_PLAY:
+                    game_manager.init_game()
+                    state = STATE_PLAY
+                    print("Démarrage du jeu...")
                 elif action == STATE_BACK:
                     state = STATE_MENU
                 elif action == "CONTROLS":
@@ -331,7 +330,6 @@ def main():
                 elif action is not None:
                     state = action
 
-        # Menu de contrôles
         elif state == "CONTROLS":
             menus["CONTROLS"].draw(screen)
             pygame.display.flip()
@@ -339,7 +337,7 @@ def main():
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
-
+                    break
                 action = menus["CONTROLS"].handle_event(event)
                 if action == STATE_BACK:
                     state = STATE_MENU
@@ -358,9 +356,7 @@ def main():
                 if action == STATE_MENU:
                     state = STATE_MENU
 
-        # État de victoire
         elif state == STATE_VICTORY:
-            # Afficher les boutons du menu de victoire
             if STATE_VICTORY not in menus:
                 victory_menu = Menu(settings, "wordsGame/victory.png")
                 victory_menu.add_button("Rejouer", STATE_PLAY)
@@ -368,7 +364,6 @@ def main():
                 victory_menu.add_button("Quitter", "QUIT")
                 menus[STATE_VICTORY] = victory_menu
             
-            # Dessiner le menu de victoire avec l'image
             menus[STATE_VICTORY].draw(screen)
             pygame.display.flip()
 
@@ -376,7 +371,6 @@ def main():
                 if event.type == QUIT:
                     running = False
                     break
-                
                 action = menus[STATE_VICTORY].handle_event(event)
                 if action == "QUIT":
                     running = False
@@ -387,7 +381,6 @@ def main():
                 elif action == STATE_MENU:
                     state = STATE_MENU
 
-        # État de jeu normal
         elif state == STATE_PLAY:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -402,21 +395,19 @@ def main():
                 break
 
             keys = pygame.key.get_pressed()
-
             game_manager.update_player(keys)
-               # --- Vérification défaite (joueur mort) ---
+
             if game_manager.player.health <= 0:
                 state = "FADE_TO_GAME_OVER"
                 fade_start_time = None
+
             game_manager.check_player_attack()
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()
-
             game_manager.draw(screen, quest)
 
             if game_manager.player_on_portal_interact():
-                game_manager.teleport_to_start()
                 quest = HEAL_INFECTED
 
             pygame.display.flip()

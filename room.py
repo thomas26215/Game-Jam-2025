@@ -49,7 +49,7 @@ class Room:
 
         self.doors = []
         self.enemies = []
-        self.enemies_data = []
+        self.enemies_data = []  # Stocke les infos de chaque ennemi, y compris son état vivant
 
         self.nb_medicaments = nb_medicaments
         self.medicaments = []
@@ -77,10 +77,8 @@ class Room:
                             rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
                             self.obstacles.append(rect)
                 except ValueError:
-                    # Pas de couche Walls
                     pass
         else:
-            # Aucun fichier TMX : juste la taille par défaut
             self.obstacles = []
 
     def generate_walls_and_doors(self, grid):
@@ -103,8 +101,6 @@ class Room:
             self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
             directions.append('right')
 
-
-        # Génération du nom de TMX selon les directions, dans l'ordre left, right, up, down
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
@@ -150,9 +146,12 @@ class Room:
                 self.enemies_data.append({
                     "x": x,
                     "y": y,
-                    "folder": f"zombies/Zombie_{zombie_number}"
+                    "folder": f"zombies/Zombie_{zombie_number}",
+                    "alive": True  # Par défaut vivant
                 })
+                
 
+        # Création des objets Enemy à partir des données
         for data in self.enemies_data:
             folder = data["folder"]
             enemy = Enemy(
@@ -167,9 +166,11 @@ class Room:
                 speed_close=1.5,
                 speed_far=0.75,
                 attack_range=50,
-                attack_damage=1
+                attack_damage=1,
+                alive=data.get("alive", True)  # On récupère l'état vivant
             )
             self.enemies.append(enemy)
+            print("Data:", data)
 
         # --- Génération des médicaments ---
         if not self.medicaments_positions:
@@ -181,7 +182,6 @@ class Room:
                     collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
                     if not collision:
                         break
-                    # Essaye de placer les potions ailleurs si collision
                 self.medicaments_positions.append((x, y))
                 self.medicaments_state[(x, y)] = False
 
@@ -196,6 +196,11 @@ class Room:
         for med, pos in zip(self.medicaments, self.medicaments_positions):
             self.medicaments_state[pos] = med.collected
 
+    def update_enemies_state(self):
+        """Met à jour l'état vivant/mort des ennemis dans enemies_data."""
+        for enemy, data in zip(self.enemies, self.enemies_data):
+            data["alive"] = enemy.alive
+
     def draw(self, surface):
         if self.map_loader.tmx_data:
             tmx_data = self.map_loader.tmx_data
@@ -205,7 +210,6 @@ class Room:
                         tile = gid if isinstance(gid, pygame.Surface) else tmx_data.get_tile_image_by_gid(gid)
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
-
 
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0, 0), door)
@@ -220,7 +224,6 @@ class Room:
             enemy.draw(surface)
         for med in self.medicaments:
             med.draw(surface)
-
 
 
 def generate_random_grid(num_rooms=6):
@@ -279,76 +282,19 @@ def generate_random_grid(num_rooms=6):
 
     return grid
 
-def generate_random_grid(num_rooms=6):
-    grid = {}
-    start = (0, 0)
-    # Salle de départ sans TMX
-    grid[start] = Room(
-        position=start,
-        nb_medicaments=1,
-        nb_ennemis=1
-    )
-
-    # Première salle ennemis toujours à droite
-    enemy_room_pos = (start[0], start[1] + 1)
-    grid[enemy_room_pos] = Room(
-        position=enemy_room_pos,
-        nb_medicaments=0,
-        nb_ennemis=2
-    )
-
-    current_positions = [enemy_room_pos]
-
-    for i in range(2, num_rooms):
-        base = current_positions[-1]  # toujours partir de la dernière salle
-        r, c = base
-        # On ne crée que des salles à droite
-        new_pos = (r, c + 1)
-        grid[new_pos] = Room(
-            position=new_pos,
-            nb_medicaments=0
-        )
-        current_positions.append(new_pos)
-
-    # Salle finale
-    farthest_pos = max(grid.keys(), key=lambda pos: pos[1])  # salle la plus à droite
-    final_room = grid[farthest_pos]
-    final_room.nb_enemies_in_room = 8
-    final_room.is_final = True
-
-    # Répartition des médicaments
-    total_meds = 30
-    all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
-    for _ in range(total_meds):
-        room = random.choice(all_rooms_except_start)
-        room.nb_medicaments += 1
-
-    # Génération des portes
-    for room in grid.values():
-        room.generate_walls_and_doors(grid)
-
-    return grid
-
 
 def draw_portal_if_boss_room(surface, room, player, settings):
-    """
-    Dessine un portail si la salle est finale et affiche un message si le joueur est dessus.
-    """
     if hasattr(room, "is_final") and room.is_final:
         if not hasattr(room, "portail") or room.portail is None:
-            from portail import Portail  # Import ici pour éviter les cycles
+            from portail import Portail
             room.portail = Portail(
-                SCREEN_WIDTH // 2 - 100 // 2,  # x centré
-                SCREEN_HEIGHT // 2 - 100 // 2, # y centré
+                SCREEN_WIDTH // 2 - 100 // 2,
+                SCREEN_HEIGHT // 2 - 100 // 2,
                 100, 100
             )
-        # Dessin du portail
         room.portail.draw(surface)
-        
-        # Récupérer les touches d'interaction et les convertir en noms
+
         interact_keys = settings.get_control("interact", "keyboard")
-        
-        # Fonction pour convertir les codes de touches en noms
         def key_name(key_code):
             key_names = {
                 pygame.K_e: "E", pygame.K_f: "F", pygame.K_r: "R", pygame.K_g: "G",
@@ -358,20 +304,16 @@ def draw_portal_if_boss_room(surface, room, player, settings):
             }
             return key_names.get(key_code, f"KEY_{key_code}")
         
-        # Créer le texte avec les noms des touches
         if interact_keys:
             keys_text = " ou ".join([key_name(key) for key in interact_keys])
             message = FONT.render(f"Appuyez sur {keys_text} pour rentrer", True, (255, 255, 0))
         else:
             message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
 
-        # Détection collision joueur-portail
         if player.hitbox.colliderect(room.portail.rect):
             msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
             msg_y = room.portail.rect.top - 30
             surface.blit(message, (msg_x, msg_y))
-            return True  # Le joueur est sur le portail
-    return False 
-
-
+            return True
+    return False
 

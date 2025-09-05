@@ -97,13 +97,12 @@ class Player(pygame.sprite.Sprite):
         """
         now = pygame.time.get_ticks()
 
-        # Attaque classique
         if attack_type == COLLECT_MEDECINE:
             if now - self.last_attack_time >= self.attack_cooldown and self.state not in ["attack", "hurt", "dead", "throw"]:
                 self.state = "attack"
                 self.current_frame = 0
                 self.last_attack_time = now
-                self.has_hit_enemy = False  
+                self.has_hit_enemy = False  # Réinitialise l'attaque
 
                 attack_rect = self.rect.copy()
                 attack_rect.width += 30
@@ -120,7 +119,17 @@ class Player(pygame.sprite.Sprite):
                 self.state = "throw"
                 self.current_frame = 0
                 self.last_throw_time = now
-                # ⚡ Ici, tu pourras instancier un projectile Potion
+                self.has_hit_enemy = False  # Réinitialise l'attaque pour le throw
+
+                # ⚡ Crée un attack_rect sur le joueur comme pour l'attaque normale
+                attack_rect = self.rect.copy()
+                attack_rect.width += 40  # potion peut avoir une zone un peu plus grande
+                attack_rect.height += 30
+                if self.direction == "right":
+                    attack_rect.x += 20
+                else:
+                    attack_rect.x -= 20
+                self.attack_rect = attack_rect
 
     def update(self, keys, current_room):
         """Met à jour le joueur."""

@@ -8,7 +8,8 @@ class Enemy(pygame.sprite.Sprite):
                  hit_spritesheet_path=None, death_spritesheet_path=None,
                  frame_width=64, frame_height=64,
                  activation_distance=100, speed_close=1.5, speed_far=0.75,
-                 attack_range=1, attack_damage=1, obstacles=None):
+                 attack_range=1, attack_damage=1, obstacles=None,
+                 alive=True):  # <-- Nouveau paramètre
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -22,10 +23,10 @@ class Enemy(pygame.sprite.Sprite):
         self.attack_damage = attack_damage
 
         # --- Vies et états ---
-        self.health = 2
-        self.alive = True
+        self.alive = alive
+        self.health = 2 if alive else 0
         self.taking_damage = False
-        self.dying = False
+        self.dying = not alive  # Si l'ennemi n'est pas vivant, il est déjà en train de mourir
 
         # --- Animation ---
         self.walk_frames = self.load_frames(walk_spritesheet_path)
@@ -39,21 +40,19 @@ class Enemy(pygame.sprite.Sprite):
         self.hit_animation_speed = 0.15
         self.death_animation_speed = 0.1
 
-        self.image = self.walk_frames[0].copy()
+        self.image = self.walk_frames[0].copy() if alive else (self.death_frames[0].copy() if self.death_frames else pygame.Surface((frame_width, frame_height)))
         self.rect = self.image.get_rect(center=(x, y))
-        self.hitbox = self.rect.copy()
-        self.hitbox.inflate_ip(-80, -75)  
 
         # --- Hitbox réduite pour collisions ---
         hitbox_width = int(self.rect.width * 0.3)
         hitbox_height = int(self.rect.height * 0.4)
-
         self.hitbox = pygame.Rect(
             self.rect.centerx - hitbox_width // 2,
             self.rect.centery - hitbox_height // 2,
             hitbox_width,
             hitbox_height
-)
+        )
+
         # --- Mouvement ---
         self.random_dx = 0
         self.random_dy = 0
@@ -63,7 +62,6 @@ class Enemy(pygame.sprite.Sprite):
         self.direction = "right"
         self.damage_applied = False
         self.obstacles = obstacles if obstacles is not None else []
-
 
     def load_frames(self, path):
         sheet = pygame.image.load(path).convert_alpha()
@@ -87,7 +85,7 @@ class Enemy(pygame.sprite.Sprite):
             self.taking_damage = True
             self.current_frame = 0
 
-    def update(self , current_room):
+    def update(self, current_room):
         if not self.alive and not self.dying:
             return
 
@@ -118,7 +116,6 @@ class Enemy(pygame.sprite.Sprite):
                     dx_norm, dy_norm = self.random_dx, self.random_dy
 
                 # --- Gestion des collisions avec les obstacles ---
-                # Test déplacement horizontal
                 self.hitbox.x += dx_norm * speed
                 for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
@@ -127,7 +124,6 @@ class Enemy(pygame.sprite.Sprite):
                         elif dx_norm < 0:
                             self.hitbox.left = obs.right
 
-                # Test déplacement vertical
                 self.hitbox.y += dy_norm * speed
                 for obs in current_room.obstacles:
                     if self.hitbox.colliderect(obs):
@@ -136,9 +132,7 @@ class Enemy(pygame.sprite.Sprite):
                         elif dy_norm < 0:
                             self.hitbox.top = obs.bottom
 
-                # Synchronise la position de l'image avec la hitbox
                 self.rect.center = self.hitbox.center
-
                 self.direction = "right" if dx >= 0 else "left"
 
         # --- Choix de l'animation ---
@@ -159,7 +153,6 @@ class Enemy(pygame.sprite.Sprite):
         if frames:
             self.current_frame += speed
             if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == 3:
-                # Hitbox d'attaque plus petite
                 attack_hitbox = self.hitbox.copy()
                 attack_hitbox.width = self.hitbox.width
                 attack_hitbox.height = self.hitbox.height // 2
