@@ -10,12 +10,17 @@ from pygame.locals import *
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
     MINIMAP_SCALE, MINIMAP_MARGIN,
-    STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
+    STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_BACK, STATE_VICTORY, STATE_OPTIONS,
     FONT
 )
 from gameSettings import GameSettings
 
 pygame.init()
+
+pygame.joystick.init()
+for i in range(pygame.joystick.get_count()):
+    pygame.joystick.Joystick(i).init()
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Contagium")
 clock = pygame.time.Clock()
@@ -306,7 +311,8 @@ def main():
                 if action == "QUIT":
                     running = False
                     break
-                elif action == "BACK":
+                elif action == STATE_BACK:
+                    # Retour au menu précédent
                     if state == STATE_OPTIONS:
                         state = STATE_MENU
                 elif action == "CONTROLS":
@@ -327,27 +333,29 @@ def main():
                     break
 
                 action = menus["CONTROLS"].handle_event(event)
-                if action == "BACK":
+                if action == STATE_BACK:
                     state = STATE_OPTIONS
 
         # État de victoire
-        elif state == "VICTORY":
-            if "VICTORY" not in menus:
+        elif state == STATE_VICTORY:
+            # Afficher les boutons du menu de victoire
+            if STATE_VICTORY not in menus:
                 victory_menu = Menu(settings, "wordsGame/victory.png")
                 victory_menu.add_button("Rejouer", STATE_PLAY)
                 victory_menu.add_button("Menu Principal", STATE_MENU)
                 victory_menu.add_button("Quitter", "QUIT")
-                menus["VICTORY"] = victory_menu
-
-            menus["VICTORY"].draw(screen)
+                menus[STATE_VICTORY] = victory_menu
+            
+            # Dessiner le menu de victoire avec l'image
+            menus[STATE_VICTORY].draw(screen)
             pygame.display.flip()
 
             for event in pygame.event.get():
                 if event.type == QUIT:
                     running = False
                     break
-
-                action = menus["VICTORY"].handle_event(event)
+                
+                action = menus[STATE_VICTORY].handle_event(event)
                 if action == "QUIT":
                     running = False
                     break

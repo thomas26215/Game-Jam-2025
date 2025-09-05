@@ -7,7 +7,7 @@ HEAD_BAR_HEIGHT = 100
 
 # Mur et portes
 WALL_THICKNESS = 10
-DOOR_SIZE = 10
+DOOR_SIZE = 20
 
 # Minimap
 MINIMAP_SCALE = 20  # Taille des carrés
@@ -19,7 +19,8 @@ STATE_PLAY = "GAME"
 STATE_PAUSE = "PAUSE"
 STATE_GAME_OVER = "GAME_OVER"
 STATE_OPTIONS = "OPTIONS"
-
+STATE_VICTORY = "VICTORY"
+STATE_BACK = "BACK"
 # Couleurs
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -28,6 +29,7 @@ GREEN = (0, 255, 0)
 
 # Police
 pygame.init()
+
 FONT = pygame.font.SysFont("Arial", 36)
 
 # Configuration des touches par défaut

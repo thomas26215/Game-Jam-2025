@@ -1,181 +1,30 @@
 import pygame
 from pygame.locals import *
+import controlsMenu
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
-    STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_OPTIONS,
+    STATE_MENU, STATE_PLAY, STATE_PAUSE, STATE_GAME_OVER, STATE_BACK ,STATE_OPTIONS,
     FONT
 )
 
-class ControlsMenu:
-    def __init__(self, settings):
-        self.settings = settings
-        self.buttons = []
-        self.current_selection = 0
-        self.waiting_for_key = False
-        self.waiting_for_gamepad = False
-        self.key_to_change = None
-        self.device_to_change = None
-        
-        # Charger l'image de fond
-        try:
-            self.background = pygame.image.load("right.png").convert()
-            self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        except:
-            self.background = None
-        
-        self.update_buttons()
-    
-    def update_buttons(self):
-        """Met à jour la liste des boutons avec les touches actuelles."""
-        self.buttons = []
-        
-        # Fonction helper pour convertir les codes de touches en noms
-        def key_name(key_code):
-            key_names = {
-                K_UP: "↑", K_DOWN: "↓", K_LEFT: "←", K_RIGHT: "→",
-                K_z: "Z", K_q: "Q", K_s: "S", K_d: "D",
-                K_SPACE: "ESPACE", K_RETURN: "ENTRÉE",
-                K_a: "A", K_b: "B", K_c: "C", K_e: "E", K_f: "F",
-                K_g: "G", K_h: "H", K_i: "I", K_j: "J", K_k: "K",
-                K_l: "L", K_m: "M", K_n: "N", K_o: "O", K_p: "P",
-                K_r: "R", K_t: "T", K_u: "U", K_v: "V", K_w: "W",
-                K_x: "X", K_y: "Y"
-            }
-            return key_names.get(key_code, f"KEY_{key_code}")
-        
-        def button_name(button_code):
-            button_names = {
-                0: "A/X", 1: "B/Circle", 2: "X/Square", 3: "Y/Triangle",
-                4: "LB", 5: "RB", 6: "Back", 7: "Start",
-                8: "LS", 9: "RS", 10: "DPad Up", 11: "DPad Down",
-                12: "DPad Left", 13: "DPad Right"
-            }
-            return button_names.get(button_code, f"BTN_{button_code}")
-        
-        # Ajouter les boutons pour chaque action
-        for action in self.settings.controls:
-            action_name = {
-                "move_up": "Haut",
-                "move_down": "Bas", 
-                "move_left": "Gauche",
-                "move_right": "Droite",
-                "attack": "Attaquer",
-                "interact": "Interagir"  
-            }.get(action, action)
-            
-            # Bouton pour clavier
-            keyboard_keys = self.settings.get_control(action, "keyboard")
-            keys_text = " + ".join([key_name(key) for key in keyboard_keys]) if keyboard_keys else "Aucune"
-            self.buttons.append({
-                "text": f"{action_name} (Clavier): {keys_text}",
-                "action": action,
-                "device": "keyboard"
-            })
-            
-            # Bouton pour manette
-            gamepad_keys = self.settings.get_control(action, "gamepad")
-            buttons_text = " + ".join([button_name(btn) for btn in gamepad_keys]) if gamepad_keys else "Aucune"
-            if(action_name == "Attaquer"):
-                self.buttons.append({
-                    "text": f"{action_name} (Manette): {buttons_text}",
-                    "action": action,
-                    "device": "gamepad"
-                })
-        
-        # Boutons spéciaux
-        self.buttons.append({"text": "Réinitialiser", "action": "RESET", "device": None})
-        self.buttons.append({"text": "Retour", "action": "BACK", "device": None})
-    
-    def draw(self, surface):
-        # Dessiner le fond
-        if self.background:
-            surface.blit(self.background, (0, 0))
-        else:
-            surface.fill((30, 30, 30))
-        
-        # Titre
-        title = FONT.render("Configuration des contrôles", True, (255, 255, 0))
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 50))
-        surface.blit(title, title_rect)
-        
-        # Message d'attente
-        if self.waiting_for_key:
-            wait_text = FONT.render("Appuyez sur une touche clavier...", True, (255, 100, 100))
-            wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
-            surface.blit(wait_text, wait_rect)
-        elif self.waiting_for_gamepad:
-            wait_text = FONT.render("Appuyez sur un bouton de manette...", True, (255, 100, 100))
-            wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
-            surface.blit(wait_text, wait_rect)
-        
-        # Boutons (plus compacts)
-        for i, button in enumerate(self.buttons):
-            color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
-            if (self.waiting_for_key or self.waiting_for_gamepad) and i == self.current_selection:
-                color = (255, 100, 100)
-            
-            # Police plus petite pour plus de boutons
-            small_font = pygame.font.SysFont("Arial", 24)
-            button_surface = small_font.render(button["text"], True, color)
-            y_pos = 120 + i * 35  # Espacement réduit
-            button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
-            
-            # Fond semi-transparent
-            button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 5))
-            button_bg.set_alpha(128)
-            button_bg.fill((0, 0, 0))
-            surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 2))
-            surface.blit(button_surface, button_rect)
-    
-    def handle_event(self, event):
-        if self.waiting_for_key:
-            if event.type == KEYDOWN:
-                if event.key not in [K_ESCAPE]:
-                    self.settings.set_control(self.key_to_change, "keyboard", [event.key])
-                    self.update_buttons()
-                self.waiting_for_key = False
-                self.key_to_change = None
-            return None
-        
-        if self.waiting_for_gamepad:
-            if event.type == JOYBUTTONDOWN:
-                self.settings.set_control(self.key_to_change, "gamepad", [event.button])
-                self.update_buttons()
-                self.waiting_for_gamepad = False
-                self.key_to_change = None
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                self.waiting_for_gamepad = False
-                self.key_to_change = None
-            return None
-        
-        if event.type == KEYDOWN:
-            if event.key == K_UP:
-                self.current_selection = (self.current_selection - 1) % len(self.buttons)
-            elif event.key == K_DOWN:
-                self.current_selection = (self.current_selection + 1) % len(self.buttons)
-            elif event.key == K_RETURN:
-                button = self.buttons[self.current_selection]
-                action = button["action"]
-                device = button.get("device")
-                
-                if action == "RESET":
-                    self.settings.reset_controls()
-                    self.update_buttons()
-                elif action == "BACK":
-                    return "BACK"
-                elif action in self.settings.controls and device:
-                    self.key_to_change = action
-                    if device == "keyboard":
-                        self.waiting_for_key = True
-                    elif device == "gamepad":
-                        self.waiting_for_gamepad = True
-            elif event.key == K_ESCAPE:
-                return "BACK"
-        
-        return None
+
+
+pygame.init()
+
+def scan_joysticks():
+    pygame.joystick.quit()
+    pygame.joystick.init()
+    joystick_count = pygame.joystick.get_count()
+    print(f"✓ {joystick_count} joystick(s) détecté(s).")
+    for i in range(joystick_count):
+        pygame.joystick.Joystick(i).init()
+        print(f"✓ Joystick {i} initialisé : {pygame.joystick.Joystick(i).get_name()}")
+
+
 
 class Menu:
     def __init__(self, settings, title_image_path=None):
+        scan_joysticks()
         self.settings = settings
         self.buttons = []
         self.current_selection = 0
@@ -347,31 +196,52 @@ class Menu:
                 pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20))
         
     def handle_event(self, event):
+    # clavier inchangé
         if event.type == KEYDOWN:
             if event.key == K_UP:
                 self.current_selection = (self.current_selection - 1) % len(self.buttons)
             elif event.key == K_DOWN:
                 self.current_selection = (self.current_selection + 1) % len(self.buttons)
-
-            # Enter to activate a button
             elif event.key == K_RETURN:
                 action = self.buttons[self.current_selection]["action"]
                 if action == "TOGGLE_MUSIC":
                     self.settings.toggle_music()
                     return None
                 elif action == "VOLUME_SLIDER":
-                     # Do nothing, volume is adjusted with arrows only
                     return None
                 else:
                     return action
-
-            # Left/Right for adjusting volume if slider is selected
             elif self.buttons[self.current_selection]["action"] == "VOLUME_SLIDER":
                 if event.key == K_LEFT:
                     self.settings.set_volume(self.settings.music_volume - 0.05)
                 elif event.key == K_RIGHT:
                     self.settings.set_volume(self.settings.music_volume + 0.05)
 
+        # ---- NOUVEAU : navigation au joystick ----
+        elif event.type == JOYAXISMOTION:
+            print(f"[LOG] JOYAXISMOTION détecté : axis={event.axis}, value={event.value}")
+            # Axe 1 = vertical sur la plupart des pads
+            if event.axis == 1:
+                if event.value < -0.5:  # stick vers le haut
+                    self.current_selection = (self.current_selection - 1) % len(self.buttons)
+                elif event.value > 0.5:  # stick vers le bas
+                    self.current_selection = (self.current_selection + 1) % len(self.buttons)
+
+        elif event.type == JOYHATMOTION:
+            print(f"[LOG] JOYHATMOTION détecté : value={event.value}")
+            # event.value = (x, y) => y = 1 haut, -1 bas
+            if event.value[1] == 1:
+                self.current_selection = (self.current_selection - 1) % len(self.buttons)
+            elif event.value[1] == -1:
+                self.current_selection = (self.current_selection + 1) % len(self.buttons)
+
+        elif event.type == JOYBUTTONDOWN:
+            print(f"[LOG] JOYBUTTONDOWN détecté : button={event.button}")
+            # bouton A (0) ou Start (7) pour "valider"
+            if event.button in (0, 7):
+                return self.buttons[self.current_selection]["action"]
+
+        # souris inchangée
         elif event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             for i, button in enumerate(self.buttons):
@@ -382,6 +252,7 @@ class Menu:
                     return button["action"]
 
         return None
+
 
 # SORTIR cette fonction de la classe Menu !
 def init_menus(settings):
@@ -416,14 +287,14 @@ def init_menus(settings):
     options_menu.add_button("Music: ON", "TOGGLE_MUSIC")
     options_menu.add_button("Volume", "VOLUME_SLIDER")
     options_menu.add_button("Contrôles", "CONTROLS")
-    options_menu.add_button("Retour", "BACK")
+    options_menu.add_button("Retour", STATE_BACK)
     
     game_over_menu = Menu(settings, "wordsGame/gameOver.png")
     game_over_menu.add_button("Rejouer", STATE_PLAY)
     game_over_menu.add_button("Menu Principal", STATE_MENU)
     game_over_menu.add_button("Quitter", "QUIT")
     
-    controls_menu = ControlsMenu(settings)
+    controls_menu = controlsMenu.ControlsMenu(settings)
     
     return {
         STATE_MENU: main_menu,
