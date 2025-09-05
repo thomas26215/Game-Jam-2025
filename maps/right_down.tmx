@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="1">
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="33">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/houses.tsx"/>
  <tileset firstgid="4397" source="../tileset/objects_demo.tsx"/>
@@ -238,5 +238,34 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="3" name="Walls"/>
+ <objectgroup id="3" name="Walls">
+  <object id="1" x="220" y="-4" width="200" height="377.333"/>
+  <object id="3" x="1006.67" y="400" width="18.6667" height="289.333"/>
+  <object id="4" x="563" y="670" width="453" height="15"/>
+  <object id="5" x="0" y="668" width="451" height="16"/>
+  <object id="6" x="422" y="-2" width="599" height="180"/>
+  <object id="9" x="-1" y="-1" width="151" height="689"/>
+  <object id="10" x="140" y="-2" width="89" height="278"/>
+  <object id="11" x="148" y="602" width="138" height="65"/>
+  <object id="12" x="142" y="557" width="119" height="42"/>
+  <object id="13" x="150" y="487" width="61" height="69"/>
+  <object id="14" x="144" y="453" width="58" height="30"/>
+  <object id="15" x="139" y="418" width="26" height="34"/>
+  <object id="16" x="151" y="374" width="22" height="24"/>
+  <object id="18" x="138" y="272" width="39" height="45"/>
+  <object id="19" x="284" y="617" width="63" height="50"/>
+  <object id="20" x="350" y="660" width="30" height="11"/>
+  <object id="21" x="408" y="168" width="125" height="40"/>
+  <object id="22" x="405" y="201" width="29" height="66"/>
+  <object id="23" x="934" y="177" width="89" height="89"/>
+  <object id="24" x="862" y="166" width="77" height="83"/>
+  <object id="25" x="741" y="146" width="131" height="79"/>
+  <object id="26" x="724" y="163" width="49" height="78"/>
+  <object id="27" x="664" y="158" width="56" height="53"/>
+  <object id="28" x="779" y="603" width="116" height="76"/>
+  <object id="29" x="907" y="531" width="103" height="139"/>
+  <object id="30" x="970" y="486" width="51" height="61"/>
+  <object id="31" x="885" y="572" width="54" height="95"/>
+  <object id="32" x="751" y="640" width="32" height="32"/>
+ </objectgroup>
 </map>

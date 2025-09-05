@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< HEAD
 <map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="5">
+=======
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="12">
+ <tileset firstgid="1" source="../tileset/ground_demo.tsx"/>
+>>>>>>> 157d706 (Terminaison des maps)
  <tileset firstgid="257" source="../tileset/houses.tsx"/>
  <tileset firstgid="4353" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="4653" source="../tileset/objects_demo.tsx"/>
@@ -244,5 +249,12 @@
   <object id="2" x="581" y="-3" width="449" height="291"/>
   <object id="3" x="1" y="405" width="1028" height="289"/>
   <object id="4" x="2" y="158" width="191" height="246"/>
+  <object id="5" x="605" y="290" width="20" height="18"/>
+  <object id="6" x="715" y="286" width="33" height="31"/>
+  <object id="7" x="857" y="289" width="51" height="21"/>
+  <object id="8" x="217" y="145" width="35" height="30"/>
+  <object id="9" x="272" y="158" width="17" height="22"/>
+  <object id="10" x="424" y="151" width="23" height="21"/>
+  <object id="11" x="563" y="258" width="31" height="19"/>
  </objectgroup>
 </map>
