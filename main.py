@@ -238,7 +238,7 @@ class GameManager:
         self.hud.draw(screen)
 
         if self.current_pos == (0, 0) and not self.has_taken_first_med:
-            message = FONT.render("Récupérez le médicament pour continuer !", True, (255, 0, 0))
+            message = FONT.render("Récupérez la potion pour continuer !", True, (255, 0, 0))
             msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
             msg_y = 20
             screen.blit(message, (msg_x, msg_y))
