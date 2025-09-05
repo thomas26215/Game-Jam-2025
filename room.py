@@ -44,14 +44,13 @@ class MapLoader:
 
 
 class Room:
-    def __init__(self, position,
-                 nb_medicaments=10, nb_ennemis=None):
+    def __init__(self, position, nb_medicaments=10, nb_ennemis=None):
         self.position = position
 
         self.doors = []
         self.total_zombies = 0
         self.enemies = []
-        self.enemies_data = []  # Stocke les infos de chaque ennemi, y compris son état vivant et resurrected
+        self.enemies_data = []  # Stocke les infos de chaque ennemi, y compris alive et resurrected
 
         self.nb_medicaments = nb_medicaments
         self.medicaments = []
@@ -61,7 +60,7 @@ class Room:
         self.obstacles = []
 
         self.map_loader = MapLoader()
-        self.tmx_file = None  # TMX à charger plus tard si nécessaire
+        self.tmx_file = None  # TMX à charger plus tard
         self.nb_enemies_in_room = nb_ennemis
 
     def load_map(self):
@@ -84,13 +83,14 @@ class Room:
             self.obstacles = []
 
     def generate_walls_and_doors(self, grid, forced_doors=None):
-        """Génère les portes selon la grille et détermine le fichier TMX."""
+        """Génère les portes selon la grille et éventuellement des portes forcées."""
         self.doors.clear()
         r, c = self.position
         SW, SH = SCREEN_WIDTH, SCREEN_HEIGHT
 
         directions = []
-       # Normal neighbors
+
+        # Vérifie les voisins ou les portes forcées
         if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
             self.doors.append(('up', pygame.Rect(0, 0, SW, DOOR_SIZE)))
             directions.append('up')
@@ -103,6 +103,7 @@ class Room:
         if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
             self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
             directions.append('right')
+
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
@@ -154,7 +155,6 @@ class Room:
                     "resurrected": False
                 })
 
-        # Création des objets Enemy à partir des données
         for data in self.enemies_data:
             enemy = Enemy(
                 data["x"], data["y"], player, screen_width, screen_height,
@@ -227,31 +227,26 @@ class Room:
             med.draw(surface)
 
 
-def generate_random_grid(num_rooms=10):
+def generate_random_grid(num_rooms=3):
     grid = {}
     start = (0, 0)
-    grid[start] = Room(
-        position=start,
-        nb_medicaments=1,
-        nb_ennemis=1
-    )
+
+    # Salle de départ
+    grid[start] = Room(position=start, nb_medicaments=1, nb_ennemis=1)
     grid[start].generate_walls_and_doors(grid, forced_doors=['right'])
 
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    dx, dy = random.choice(directions)
-    enemy_room_pos = (start[0], start[1] + 1)  # explicitly to the right
-    grid[enemy_room_pos] = Room(
-        position=enemy_room_pos,
-        nb_medicaments=0,
-        nb_ennemis=0
-    )
+    # Salle à droite du départ
+    enemy_room_pos = (0, 1)
+    grid[enemy_room_pos] = Room(position=enemy_room_pos, nb_medicaments=0, nb_ennemis=2)
     grid[enemy_room_pos].generate_walls_and_doors(grid, forced_doors=['left'])
 
-    forbidden_positions = {(start[0] + dx, start[1] + dy) for dx, dy in directions}
-    forbidden_positions.discard(enemy_room_pos)
     current_positions = [enemy_room_pos]
 
-    for i in range(2, num_rooms):
+    # Autres salles aléatoires
+    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    forbidden_positions = {(0, 0), enemy_room_pos}
+
+    for _ in range(2, num_rooms):
         base = random.choice(current_positions)
         r, c = base
         possible = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
@@ -266,6 +261,7 @@ def generate_random_grid(num_rooms=10):
                 current_positions.append(pos)
                 break
 
+    # Salle finale
     farthest_pos = max(grid.keys(), key=lambda pos: abs(pos[0]) + abs(pos[1]))
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
@@ -295,8 +291,10 @@ def generate_random_grid(num_rooms=10):
         room = random.choice(all_rooms_except_start)
         room.nb_medicaments += 1
 
-    for room in grid.values():
-        room.generate_walls_and_doors(grid)
+    # Génération portes des autres salles
+    for pos, room in grid.items():
+        if not getattr(room, "is_final", False):
+            room.generate_walls_and_doors(grid)
 
     return grid
 
