@@ -267,6 +267,44 @@ def main():
     while running:
         dt = clock.tick(60)
 
+        if state == "FADE_TO_GAME_OVER":
+            if fade_start_time is None:
+                fade_start_time = pygame.time.get_ticks()
+            elapsed = pygame.time.get_ticks() - fade_start_time
+
+            # Draw everything to game_surface
+            game_surface.fill((0, 0, 0))
+            game_manager.current_room.draw(game_surface)
+            game_manager.current_room.draw_contents(game_surface)
+            game_surface.blit(game_manager.player.image, game_manager.player.rect)
+            for enemy in game_manager.current_room.enemies:
+                enemy.draw(game_surface)
+            for med in game_manager.current_room.medicaments:
+                med.draw(game_surface)
+
+            draw_minimap(game_surface, game_manager.grid, game_manager.current_pos, game_manager.visited_rooms)
+
+            game_manager.hud.set_lives(game_manager.player.health)
+            game_manager.hud.draw(game_surface)
+
+            # Fade overlay on game_surface
+            alpha = min(255, int(255 * (elapsed / fade_duration)))
+            fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            fade_surface.set_alpha(alpha)
+            fade_surface.fill((0, 0, 0))
+            game_surface.blit(fade_surface, (0, 0))
+
+            # Blit centered
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (center_x, center_y))
+            pygame.display.flip()
+
+            if elapsed >= fade_duration:
+                state = STATE_GAME_OVER
+                fade_start_time = None
+            continue
+
+
         if state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER, STATE_VICTORY, "CONTROLS"]:
             # dessine les menus sur game_surface
             game_surface.fill((0, 0, 0))
@@ -310,6 +348,7 @@ def main():
                 if action == STATE_MENU:
                     state = STATE_MENU
 
+
         elif state == STATE_PLAY:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -325,6 +364,12 @@ def main():
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()
+
+            # Check for game over
+            if game_manager.player.health <= 0:
+                state = "FADE_TO_GAME_OVER"
+                quest = COLLECT_MEDECINE
+                fade_start_time = None
 
             game_surface.fill((0, 0, 0))
             game_manager.draw(game_surface, quest)
