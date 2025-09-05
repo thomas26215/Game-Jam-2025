@@ -107,15 +107,26 @@ class GameManager:
         self.player.update(keys, self.current_room)
 
     def check_player_attack(self, quest=COLLECT_MEDECINE):
-        if self.player.state == "attack" and hasattr(self.player, "attack_rect") and not self.player.has_hit_enemy:
+        """
+        Applique les dégâts aux ennemis si le joueur attaque (normale ou splash).
+        L'attaque normale et le splash utilisent la même logique,
+        seule l'animation diffère.
+        """
+        if (self.player.state in ["attack", "throw"] and 
+            hasattr(self.player, "attack_rect") and 
+            not self.player.has_hit_enemy):
+            
+            attack_rect = self.player.attack_rect
             for enemy in self.current_room.enemies:
-                if enemy.alive and self.player.attack_rect.colliderect(enemy.rect):
-                    if quest == COLLECT_MEDECINE:
-                        enemy.take_damage(damage=1)
-                    elif quest == HEAL_INFECTED:
-                        enemy.take_damage(damage=2)
-                    self.player.has_hit_enemy = True
+                if enemy.alive and attack_rect.colliderect(enemy.hitbox):
+                    damage = 1 if quest == COLLECT_MEDECINE else 2
+                    enemy.take_damage(damage=damage)
+                    print("quéte:", quest, " - Ennemi touché ! Vie restante :", enemy.health)
+                    # On ne touche qu’un ennemi par frame pour éviter multi-hit
                     break
+            
+            self.player.has_hit_enemy = True
+
 
     def update_enemies(self):
         for enemy in self.current_room.enemies:
@@ -399,7 +410,7 @@ def main():
                 state = "FADE_TO_GAME_OVER"
                 fade_start_time = None
 
-            game_manager.check_player_attack()
+            game_manager.check_player_attack(quest)
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()

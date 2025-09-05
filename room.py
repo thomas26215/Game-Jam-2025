@@ -105,6 +105,7 @@ class Room:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
             self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
+            print("Chargement TMX :", self.tmx_file)
         else:
             self.tmx_file = None
 
