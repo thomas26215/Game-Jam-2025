@@ -99,7 +99,7 @@ class GameManager:
             throw_spritesheet_path="player/attack_potion.png",
             hud = self.hud
         )
-        print("Player initialized at center with health:", self.player.hud.lives_left)
+        # print("Player initialized at center with health:", self.player.hud.lives_left)
         
         self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -125,7 +125,7 @@ class GameManager:
                 if enemy.alive and attack_rect.colliderect(enemy.hitbox):
                     damage = 1 if quest == COLLECT_MEDECINE else 3
                     enemy.take_damage(damage=damage)
-                    print("quéte:", quest, " - Ennemi touché ! Vie restante :", enemy.health)
+                    # print("quéte:", quest, " - Ennemi touché ! Vie restante :", enemy.health)
                     # On ne touche qu’un ennemi par frame pour éviter multi-hit
                     break
             
@@ -334,7 +334,7 @@ def main():
                 elif action == STATE_PLAY:
                     game_manager.init_game()
                     state = STATE_PLAY
-                    print("Démarrage du jeu...")
+                    #print("Démarrage du jeu...")
                 elif action == STATE_BACK:
                     state = STATE_MENU
                 elif action == "CONTROLS":

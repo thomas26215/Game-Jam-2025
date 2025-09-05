@@ -25,7 +25,7 @@ class MapLoader:
             self.height = SCREEN_HEIGHT
             return
 
-        print(f"Tentative de chargement du TMX : {tmx_file}")
+        #print(f"Tentative de chargement du TMX : {tmx_file}")
         self.tmx_data = pytmx.load_pygame(tmx_file)
         self.width = self.tmx_data.width * self.tmx_data.tilewidth
         self.height = self.tmx_data.height * self.tmx_data.tileheight
@@ -108,7 +108,7 @@ class Room:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
             self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
-            print("Chargement TMX :", self.tmx_file)
+            #print("Chargement TMX :", self.tmx_file)
         else:
             self.tmx_file = None
 
@@ -270,6 +270,7 @@ def generate_random_grid(num_rooms=3):
     # --- Répartition des zombies dans les 9 salles ---
     normal_rooms = [room for pos, room in grid.items() if pos != start and not getattr(room, "is_final", False)]
     total_zombies = random.randint(20, 37)
+    print  ("Total zombies à répartir :", total_zombies)
     zombies_left = total_zombies
 
     for room in normal_rooms:
