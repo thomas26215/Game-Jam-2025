@@ -166,6 +166,20 @@ class GameManager:
             self.player.rect.left = 60
         self.player.hitbox.center = self.player.rect.center
 
+    def teleport_to_start(self):
+        """Ramène le joueur dans la salle (0,0)"""
+        self.current_pos = (0, 0)
+        self.current_room = self.grid[self.current_pos]
+        self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # Repositionner le joueur au centre
+        self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.player.hitbox.center = self.player.rect.center
+
+        # Marquer la salle comme visitée
+        self.visited_rooms.add(self.current_pos)
+
+
     def draw(self, screen):
         self.current_room.draw(screen)
         self.current_room.draw_contents(screen)
@@ -206,10 +220,26 @@ class GameManager:
         interact_pressed = any(keys[key] for key in self.settings.get_control("interact", "keyboard"))
         if self.player.joystick and not interact_pressed:
             interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
-
+        
         on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
+        print(on_portal, interact_pressed)
+        
+        if on_portal and interact_pressed:
+            # Téléporter le joueur dans la salle (0,0) au lieu de terminer
+            self.current_pos = (0, 0)
+            self.current_room = self.grid[self.current_pos]
+            self.current_room.generate_contents(self.player, SCREEN_WIDTH, SCREEN_HEIGHT)
+            
+            # Repositionner le joueur au centre
+            self.player.rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            self.player.hitbox.center = self.player.rect.center
+            
+            # Marquer la salle comme visitée
+            self.visited_rooms.add(self.current_pos)
+            
+            return True  # Interaction réussie
+        return False
 
-        return on_portal and interact_pressed
 
 
 # --- boucle principale ---
@@ -352,7 +382,7 @@ def main():
             game_manager.draw(screen)
 
             if game_manager.player_on_portal_interact():
-                state = "VICTORY"
+                game_manager.teleport_to_start()
 
             pygame.display.flip()
 
