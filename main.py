@@ -79,7 +79,7 @@ class GameManager:
         self.VISION_RADIUS = self.settings.vision_radius
 
     def init_game(self):
-        self.grid = generate_random_grid(num_rooms=3)
+        self.grid = generate_random_grid(num_rooms=10)
         self.current_pos = (0, 0)
         self.current_room = self.grid[self.current_pos]
 
@@ -413,6 +413,7 @@ def main():
 
             if game_manager.player.health <= 0:
                 state = "FADE_TO_GAME_OVER"
+                quest = COLLECT_MEDECINE
                 fade_start_time = None
 
             game_manager.check_player_attack(quest)

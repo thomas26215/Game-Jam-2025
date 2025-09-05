@@ -89,3 +89,11 @@ class InfoHUD:
         points = [(x - r, y), (x + r, y), (x, y + r + 6)]
         pygame.draw.polygon(surface, color, points)
 
+
+    def reset(self):
+        """Remet le HUD à son état initial."""
+        self.lives_left = self.max_lives
+        self.meds_collected = 0
+        self.poisoned = False
+        self.poison_particles = [[] for _ in range(self.max_lives)]
+
