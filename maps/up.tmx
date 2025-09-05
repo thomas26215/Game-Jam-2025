@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="58">
+<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="59">
  <tileset firstgid="1" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="301" source="../tileset/houses.tsx"/>
  <tileset firstgid="4397" source="../tileset/objects_demo.tsx"/>
@@ -254,5 +254,6 @@
   <object id="55" x="799.533" y="267.956" width="26.8823" height="22.5465"/>
   <object id="56" x="815.142" y="258.417" width="14.7419" height="9.53889"/>
   <object id="57" x="845.493" y="269.69" width="15.6091" height="19.0778"/>
+  <object id="58" x="120.537" y="567.998" width="781.322" height="130.943"/>
  </objectgroup>
 </map>
