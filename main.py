@@ -206,7 +206,7 @@ def main():
             game_manager.update_medicaments()
             game_manager.try_change_room()
 
-            if game_manager.player_on_portal_interact():
+            if game_manager.player_on_portal_interact(quest):
                 quest = HEAL_INFECTED
 
 

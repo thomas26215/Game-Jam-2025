@@ -4,7 +4,7 @@ from config import COLLECT_MEDECINE, FONT, SCREEN_HEIGHT, SCREEN_WIDTH
 import draw_minimap
 from infos_hud import InfoHUD
 from player import Player
-from room import draw_portal_if_boss_room, generate_random_grid
+from room import draw_portal_if_boss_room, generate_random_grid, clear_all_medicaments_in_rooms
 
 
 class GameManager:
@@ -152,7 +152,7 @@ class GameManager:
         # Marquer la salle comme visitée
         self.visited_rooms.add(self.current_pos)
       
-    def player_on_portal_interact(self):
+    def player_on_portal_interact(self, quest):
         keys = pygame.key.get_pressed()
         interact_pressed = any(keys[key] for key in self.settings.get_control("interact", "keyboard"))
         if self.player.joystick and not interact_pressed:
@@ -160,8 +160,9 @@ class GameManager:
         
         on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
         
-        if on_portal and interact_pressed:
+        if on_portal and interact_pressed and quest == COLLECT_MEDECINE:
             self.teleport_to_start()
+            clear_all_medicaments_in_rooms(self.grid)
             return True
         return False  
         
@@ -169,7 +170,7 @@ class GameManager:
         self.current_room.draw(surface)
         self.current_room.draw_contents(surface)
         draw_portal_if_boss_room(surface, self.current_room, self.player, self.settings)
-        surface.blit(self.player.image, self.player.rect)
+        self.player.draw(surface)
 
         for enemy in self.current_room.enemies:
             enemy.draw(surface)

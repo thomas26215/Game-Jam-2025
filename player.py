@@ -17,7 +17,7 @@ class Player(pygame.sprite.Sprite):
         self.direction = "right"
         self.state = "idle"
         self.moving = False
-        self.health = 3
+        self.health = 100
         self.attack_rect = None
         self.has_hit_enemy = False  
         self.hud = hud  
@@ -234,8 +234,19 @@ class Player(pygame.sprite.Sprite):
         if self.direction == "left":
             self.image = pygame.transform.flip(self.image, True, False)
 
+
     def draw(self, surface):
-        """Affiche le joueur à l'écran."""
+        """Affiche le joueur et ses hitbox pour debug."""
+        # Sprite
         surface.blit(self.image, self.rect)
-        pygame.draw.rect(surface, (255, 0, 0), self.rect, 2)  # Hitbox rouge
+
+        # Hitbox réelle (utilisée pour collisions)
+        pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
+
+        # Rect englobant du sprite (utile pour comparer)
+        pygame.draw.rect(surface, (255, 255, 0), self.rect, 2)
+
+        # Hitbox d’attaque si elle est active
+        if self.attack_rect:
+            pygame.draw.rect(surface, (0, 255, 0), self.attack_rect, 2)
 

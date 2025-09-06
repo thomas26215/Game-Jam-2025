@@ -156,8 +156,16 @@ class Room:
         """Met à jour la vie des ennemis dans enemies_data."""
         for enemy, data in zip(self.enemies, self.enemies_data):
             data["health"] = enemy.health  # Mettre à jour la vie uniquement
+            print("ennemies présents dans la pièce :", len(self.enemies))
 
         print("Vie des ennemis dans la salle :", [data["health"] for data in self.enemies_data])
+
+
+    def clear_medicaments(self):
+        """Supprime toutes les potions de la salle."""
+        self.medicaments.clear()
+        self.medicaments_positions.clear()
+        self.medicaments_state.clear()
 
     def draw(self, surface):
         if self.map_loader.tmx_data:
@@ -255,6 +263,8 @@ def generate_random_grid(num_rooms=3):
 
     return grid
 
+
+
 def draw_portal_if_boss_room(surface, room, player, settings):
     if hasattr(room, "is_final") and room.is_final:
         if not hasattr(room, "portail") or room.portail is None:
@@ -289,3 +299,14 @@ def draw_portal_if_boss_room(surface, room, player, settings):
             return True
     return False
 
+def clear_all_medicaments_in_rooms(rooms):
+    """
+    Supprime toutes les potions dans toutes les salles passées.
+    `rooms` peut être un dict (valeurs Room) ou une liste de Room.
+    """
+    if isinstance(rooms, dict):
+        room_iterable = rooms.values()
+    else:
+        room_iterable = rooms
+    for room in room_iterable:
+        room.clear_medicaments()
