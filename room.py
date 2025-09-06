@@ -9,34 +9,26 @@ from maploader import MapLoader
 from medicament import Medicament
 
 
-
 class Room:
     def __init__(self, position, nb_medicaments=10, nb_ennemis=None):
         self.position = position
-
         self.doors = []
         self.total_zombies = 0
         self.enemies = []
-        self.enemies_data = []  # Stocke les infos de chaque ennemi, y compris alive et resurrected
-
+        self.enemies_data = []  # Stocke les infos de chaque ennemi, incluant désormais "health"
         self.nb_medicaments = nb_medicaments
         self.medicaments = []
         self.medicaments_positions = []
         self.medicaments_state = {}
-
         self.obstacles = []
-
         self.map_loader = MapLoader()
-        self.tmx_file = None  # TMX à charger plus tard
+        self.tmx_file = None
         self.nb_enemies_in_room = nb_ennemis
 
     def load_map(self):
-        """Charge le TMX et les obstacles si un fichier est défini et existe."""
         if self.tmx_file and os.path.exists(self.tmx_file):
             self.map_loader.load(self.tmx_file)
             self.obstacles = self.map_loader.obstacles
-
-            # Ajouter les murs du TMX si la couche existe
             if self.map_loader.tmx_data:
                 try:
                     walls_layer = self.map_loader.tmx_data.get_layer_by_name("Walls")
@@ -50,38 +42,28 @@ class Room:
             self.obstacles = []
 
     def generate_walls_and_doors(self, grid, forced_doors=None):
-        """Génère les portes selon la grille et éventuellement des portes forcées."""
         self.doors.clear()
         r, c = self.position
         SW, SH = SCREEN_WIDTH, SCREEN_HEIGHT
-
         directions = []
-
-        # Dimensions pour centrer les portes
-        door_length = SW // 10  # Largeur des portes horizontales
-        door_height = SH // 7  # Hauteur des portes verticales
-
-        # Porte du haut (centrée)
+        door_length = SW // 10
+        door_height = SH // 7
         if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
             up_rect = pygame.Rect((SW - door_length) // 2, 0, door_length, DOOR_SIZE)
             self.doors.append(('up', up_rect))
             directions.append('up')
-        # Porte du bas (centrée)
         if (r + 1, c) in grid or (forced_doors and 'down' in forced_doors):
             down_rect = pygame.Rect((SW - door_length) // 2, SH - DOOR_SIZE, door_length, DOOR_SIZE)
             self.doors.append(('down', down_rect))
             directions.append('down')
-        # Porte de gauche (centrée)
         if (r, c - 1) in grid or (forced_doors and 'left' in forced_doors):
             left_rect = pygame.Rect(0, (SH - door_height) // 2, DOOR_SIZE, door_height)
             self.doors.append(('left', left_rect))
             directions.append('left')
-        # Porte de droite (centrée)
         if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
             right_rect = pygame.Rect(SW - DOOR_SIZE, (SH - door_height) // 2, DOOR_SIZE, door_height)
             self.doors.append(('right', right_rect))
             directions.append('right')
-
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
@@ -90,14 +72,11 @@ class Room:
                 self.tmx_file = "maps/right.tmx"
             else:
                 self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
-            #print("Chargement TMX :", self.tmx_file)
         else:
             self.tmx_file = None
-
         self.load_map()
 
     def generate_contents(self, player, screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT):
-        """Génère ennemis et médicaments en évitant obstacles et portes."""
         self.enemies.clear()
         self.medicaments.clear()
         door_areas = [door for _, door in self.doors]
@@ -106,35 +85,29 @@ class Room:
         if not self.enemies_data:
             if self.nb_enemies_in_room is None:
                 self.nb_enemies_in_room = random.randint(1, 4)
-
             spawn_margin = 250
             wall_margin = 20
-
             for _ in range(self.nb_enemies_in_room):
                 while True:
                     x = random.randint(spawn_margin, screen_width - spawn_margin)
                     y = random.randint(spawn_margin, screen_height - spawn_margin)
                     new_rect = pygame.Rect(x - 15, y - 15, 30, 30)
-
                     collision = any(new_rect.colliderect(obs) for obs in self.obstacles + door_areas)
                     too_close_to_wall = any(
                         new_rect.inflate(wall_margin * 2, wall_margin * 2).colliderect(obs)
                         for obs in self.obstacles
                     )
-
                     if not collision and not too_close_to_wall:
                         break
-
                 zombie_number = random.randint(1, 4)
                 human_number = random.randint(1, 3)
-
+                # On stocke désormais uniquement "health" au lieu de alive/resurrected
                 self.enemies_data.append({
                     "x": x,
                     "y": y,
                     "folder": f"zombies/Zombie_{zombie_number}",
                     "resurrected_sprites_folder": f"Humans/Homeless_{human_number}",
-                    "alive": True,
-                    "resurrected": False
+                    "health": 2  # vie initiale normale pour un zombie
                 })
 
         for data in self.enemies_data:
@@ -142,6 +115,7 @@ class Room:
                 data["x"], data["y"], player, screen_width, screen_height,
                 sprites_folder=data["folder"],
                 resurrected_sprites_folder=data.get("resurrected_sprites_folder"),
+                base_health=data.get("health", 2),
                 frame_width=128,
                 frame_height=128,
                 activation_distance=200,
@@ -149,9 +123,9 @@ class Room:
                 speed_far=0.75,
                 attack_range=50,
                 attack_damage=1,
-                alive=data.get("alive", True),
-                resurrected=data.get("resurrected", False)
+                obstacles=self.obstacles
             )
+            enemy.health = data.get("health", 2)  # Réaffecter la vie depuis les données
             self.enemies.append(enemy)
 
         # --- Génération des médicaments ---
@@ -179,10 +153,11 @@ class Room:
             self.medicaments_state[pos] = med.collected
 
     def update_enemies_state(self):
-        """Met à jour l'état vivant/mort et resurrected des ennemis dans enemies_data."""
+        """Met à jour la vie des ennemis dans enemies_data."""
         for enemy, data in zip(self.enemies, self.enemies_data):
-            data["alive"] = enemy.alive
-            data["resurrected"] = enemy.resurrected
+            data["health"] = enemy.health  # Mettre à jour la vie uniquement
+
+        print("Vie des ennemis dans la salle :", [data["health"] for data in self.enemies_data])
 
     def draw(self, surface):
         if self.map_loader.tmx_data:
@@ -193,10 +168,8 @@ class Room:
                         tile = gid if isinstance(gid, pygame.Surface) else tmx_data.get_tile_image_by_gid(gid)
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
-
         for _, door in self.doors:
             pygame.draw.rect(surface, (255, 0, 0, 0), door)
-
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:
@@ -207,7 +180,6 @@ class Room:
             enemy.draw(surface)
         for med in self.medicaments:
             med.draw(surface)
-
 
 def generate_random_grid(num_rooms=3):
     grid = {}
