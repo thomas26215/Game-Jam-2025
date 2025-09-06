@@ -398,7 +398,12 @@ def main():
                     running = False
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     push_state(state_stack, STATE_PAUSE)
-                elif event.type == KEYDOWN and event.key == K_SPACE:
+                elif event.type == KEYDOWN and event.key in settings.get_control("attack", "keyboard"):
+                    if quest == COLLECT_MEDECINE:
+                        game_manager.player.attack(COLLECT_MEDECINE)
+                    else:
+                        game_manager.player.attack(HEAL_INFECTED)
+                elif event.type == JOYBUTTONDOWN and event.button in settings.get_control("attack", "gamepad"):
                     if quest == COLLECT_MEDECINE:
                         game_manager.player.attack(COLLECT_MEDECINE)
                     else:
