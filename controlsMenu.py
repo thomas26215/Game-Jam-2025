@@ -123,8 +123,8 @@ class ControlsMenu:
         gamepad_buttons = [b for b in self.buttons if b.get("device") == "gamepad"]
         special_buttons = [b for b in self.buttons if b.get("device") is None]
 
-        # Calculer la sélection courante
-        total_grid = keyboard_buttons + gamepad_buttons + special_buttons
+        # Liste ordonnée pour la sélection et la modification
+        self.displayed_buttons = keyboard_buttons + gamepad_buttons + special_buttons
         selection_idx = self.current_selection
 
         # Affichage grille
@@ -198,11 +198,11 @@ class ControlsMenu:
         # Navigation clavier
         if event.type == KEYDOWN:
             if event.key == K_UP:
-                self.current_selection = (self.current_selection - 1) % len(self.buttons)
+                self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
             elif event.key == K_DOWN:
-                self.current_selection = (self.current_selection + 1) % len(self.buttons)
+                self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
             elif event.key == K_RETURN:
-                button = self.buttons[self.current_selection]
+                button = self.displayed_buttons[self.current_selection]
                 action = button["action"]
                 device = button.get("device")
                 if action == "RESET":
@@ -223,22 +223,22 @@ class ControlsMenu:
         elif event.type == JOYAXISMOTION:
             if event.axis == 1:
                 if event.value < -0.999999:  # stick vers le haut
-                    self.current_selection = (self.current_selection - 1) % len(self.buttons)
+                    self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
                 elif event.value > 0.999999:  # stick vers le bas
-                    self.current_selection = (self.current_selection + 1) % len(self.buttons)
+                    self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
 
         # Navigation à la croix directionnelle (D-Pad)
         elif event.type == JOYHATMOTION:
             # event.value = (x, y) => y = 1 haut, -1 bas
             if event.value[1] == 1:
-                self.current_selection = (self.current_selection - 1) % len(self.buttons)
+                self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
             elif event.value[1] == -1:
-                self.current_selection = (self.current_selection + 1) % len(self.buttons)
+                self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
 
         # Validation avec bouton A ou Start
         elif event.type == JOYBUTTONDOWN:
             if event.button in (0, 7):
-                button = self.buttons[self.current_selection]
+                button = self.displayed_buttons[self.current_selection]
                 action = button["action"]
                 device = button.get("device")
                 if action == "RESET":
