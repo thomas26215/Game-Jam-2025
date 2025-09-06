@@ -121,10 +121,16 @@ class ControlsMenu:
         # Séparer clavier et manette
         keyboard_buttons = [b for b in self.buttons if b.get("device") == "keyboard"]
         gamepad_buttons = [b for b in self.buttons if b.get("device") == "gamepad"]
-        special_buttons = [b for b in self.buttons if b.get("device") is None]
+        # On suppose l'ordre : Réinitialiser puis Retour
+        reset_btn = next((b for b in self.buttons if b.get("action") == "RESET"), None)
+        back_btn = next((b for b in self.buttons if b.get("action") == STATE_BACK), None)
 
         # Liste ordonnée pour la sélection et la modification
-        self.displayed_buttons = keyboard_buttons + gamepad_buttons + special_buttons
+        self.displayed_buttons = keyboard_buttons + gamepad_buttons
+        if reset_btn:
+            self.displayed_buttons.append(reset_btn)
+        if back_btn:
+            self.displayed_buttons.append(back_btn)
         selection_idx = self.current_selection
 
         # Affichage grille
@@ -160,15 +166,26 @@ class ControlsMenu:
             surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
             surface.blit(text_surface, button_rect)
 
-        # Boutons spéciaux centrés en dessous
-        for i, button in enumerate(special_buttons):
-            idx = len(keyboard_buttons) + len(gamepad_buttons) + i
+        # Boutons spéciaux : Réinitialiser sous clavier, Retour sous manette
+        special_y = start_y + max_rows * row_height + 40
+        if reset_btn:
+            idx = len(keyboard_buttons) + len(gamepad_buttons)
             color = (0, 150, 0) if selection_idx == idx else (44, 68, 132)
             if (self.waiting_for_key or self.waiting_for_gamepad) and selection_idx == idx:
                 color = (255, 100, 100)
-            text_surface = obra_font.render(button["text"], True, color)
-            y_pos = start_y + max_rows * row_height + 40 + i * row_height
-            button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+            text_surface = obra_font.render(reset_btn["text"], True, color)
+            button_rect = text_surface.get_rect(center=(col_x[0], special_y))
+            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+            surface.blit(text_surface, button_rect)
+        if back_btn:
+            idx = len(keyboard_buttons) + len(gamepad_buttons) + (1 if reset_btn else 0)
+            color = (0, 150, 0) if selection_idx == idx else (44, 68, 132)
+            if (self.waiting_for_key or self.waiting_for_gamepad) and selection_idx == idx:
+                color = (255, 100, 100)
+            text_surface = obra_font.render(back_btn["text"], True, color)
+            button_rect = text_surface.get_rect(center=(col_x[1], special_y))
             button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
             pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
             surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
@@ -183,7 +200,7 @@ class ControlsMenu:
                 self.waiting_for_key = False
                 self.key_to_change = None
             return None
-        
+
         if self.waiting_for_gamepad:
             if event.type == JOYBUTTONDOWN:
                 self.settings.set_control(self.key_to_change, "gamepad", [event.button])
@@ -194,13 +211,119 @@ class ControlsMenu:
                 self.waiting_for_gamepad = False
                 self.key_to_change = None
             return None
-        
-        # Navigation clavier
+
+        # Nouvelle logique grille
+        keyboard_buttons = [b for b in self.buttons if b.get("device") == "keyboard"]
+        gamepad_buttons = [b for b in self.buttons if b.get("device") == "gamepad"]
+        reset_btn = next((b for b in self.buttons if b.get("action") == "RESET"), None)
+        back_btn = next((b for b in self.buttons if b.get("action") == STATE_BACK), None)
+        num_keyboard = len(keyboard_buttons)
+        num_gamepad = len(gamepad_buttons)
+        has_reset = reset_btn is not None
+        has_back = back_btn is not None
+        max_rows = max(num_keyboard, num_gamepad)
+
+        def get_grid_pos(idx):
+            # Colonne, ligne
+            if idx < num_keyboard:
+                return (0, idx)
+            elif idx < num_keyboard + num_gamepad:
+                return (1, idx - num_keyboard)
+            elif idx == num_keyboard + num_gamepad and has_reset:
+                return (0, max_rows)
+            elif idx == num_keyboard + num_gamepad + (1 if has_reset else 0) and has_back:
+                return (1, max_rows)
+            return (0, 0)
+
+        def get_idx_from_grid(col, row):
+            if col == 0:
+                if row < num_keyboard:
+                    return row
+                elif has_reset and row == max_rows:
+                    return num_keyboard + num_gamepad
+            elif col == 1:
+                if row < num_gamepad:
+                    return num_keyboard + row
+                elif has_back and row == max_rows:
+                    return num_keyboard + num_gamepad + (1 if has_reset else 0)
+            return None
+
+        def get_grid_pos(idx):
+            # Colonne, ligne
+            if idx < num_keyboard:
+                return (0, idx)
+            elif idx < num_keyboard + num_gamepad:
+                return (1, idx - num_keyboard)
+            elif idx == num_keyboard + num_gamepad and has_reset:
+                return (0, max_rows)
+            elif idx == num_keyboard + num_gamepad + (1 if has_reset else 0) and has_back:
+                return (1, max_rows)
+            return (0, 0)
+
+        def get_idx_from_grid(col, row):
+            if col == 0:
+                if row < num_keyboard:
+                    return row
+                elif has_reset and row == max_rows:
+                    return num_keyboard + num_gamepad
+            elif col == 1:
+                if row < num_gamepad:
+                    return num_keyboard + row
+                elif has_back and row == max_rows:
+                    return num_keyboard + num_gamepad + (1 if has_reset else 0)
+            return None
+
         if event.type == KEYDOWN:
+            col, row = get_grid_pos(self.current_selection)
             if event.key == K_UP:
-                self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
+                if row > 0:
+                    new_idx = get_idx_from_grid(col, row - 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+                else:
+                    # Si on est sur le bouton spécial, remonter à la dernière ligne de la colonne
+                    new_idx = get_idx_from_grid(col, max_rows - 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
             elif event.key == K_DOWN:
-                self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
+                if (col == 0 and row == num_keyboard - 1) or (col == 1 and row == num_gamepad - 1):
+                    # Dernière ligne de la colonne : descendre sur le bouton spécial
+                    new_idx = get_idx_from_grid(col, max_rows)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+                elif row < max_rows:
+                    new_idx = get_idx_from_grid(col, row + 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+            elif event.key == K_LEFT:
+                if col == 1:
+                    # Même ligne colonne clavier
+                    new_idx = get_idx_from_grid(0, row)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+            elif event.key == K_RIGHT:
+                if col == 0:
+                    # Même ligne colonne manette
+                    new_idx = get_idx_from_grid(1, row)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+            elif event.key == K_RETURN:
+                button = self.displayed_buttons[self.current_selection]
+                action = button["action"]
+                device = button.get("device")
+                if action == "RESET":
+                    self.settings.reset_controls()
+                    self.update_buttons()
+                elif action == STATE_BACK:
+                    return STATE_BACK
+                elif action in self.settings.controls and device:
+                    self.key_to_change = action
+                    if device == "keyboard":
+                        self.waiting_for_key = True
+                    elif device == "gamepad":
+                        self.waiting_for_gamepad = True
+            elif event.key == K_ESCAPE:
+                return STATE_BACK
             elif event.key == K_RETURN:
                 button = self.displayed_buttons[self.current_selection]
                 action = button["action"]
@@ -219,21 +342,71 @@ class ControlsMenu:
             elif event.key == K_ESCAPE:
                 return STATE_BACK
 
-        # Navigation au joystick (stick analogique vertical)
+        # Navigation au joystick (stick analogique vertical/horizontal)
         elif event.type == JOYAXISMOTION:
+            col, row = get_grid_pos(self.current_selection)
             if event.axis == 1:
-                if event.value < -0.999999:  # stick vers le haut
-                    self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
-                elif event.value > 0.999999:  # stick vers le bas
-                    self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
+                if event.value < -0.999999:
+                    if row > 0:
+                        new_idx = get_idx_from_grid(col, row - 1)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
+                    else:
+                        new_idx = get_idx_from_grid(col, max_rows - 1)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
+                elif event.value > 0.999999:
+                    if (col == 0 and row == num_keyboard - 1) or (col == 1 and row == num_gamepad - 1):
+                        new_idx = get_idx_from_grid(col, max_rows)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
+                    elif row < max_rows:
+                        new_idx = get_idx_from_grid(col, row + 1)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
+            elif event.axis == 0:
+                if event.value < -0.999999:
+                    if col == 1:
+                        new_idx = get_idx_from_grid(0, row)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
+                elif event.value > 0.999999:
+                    if col == 0:
+                        new_idx = get_idx_from_grid(1, row)
+                        if new_idx is not None:
+                            self.current_selection = new_idx
 
         # Navigation à la croix directionnelle (D-Pad)
         elif event.type == JOYHATMOTION:
-            # event.value = (x, y) => y = 1 haut, -1 bas
+            col, row = get_grid_pos(self.current_selection)
             if event.value[1] == 1:
-                self.current_selection = (self.current_selection - 1) % len(self.displayed_buttons)
+                if row > 0:
+                    new_idx = get_idx_from_grid(col, row - 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+                else:
+                    new_idx = get_idx_from_grid(col, max_rows - 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
             elif event.value[1] == -1:
-                self.current_selection = (self.current_selection + 1) % len(self.displayed_buttons)
+                if (col == 0 and row == num_keyboard - 1) or (col == 1 and row == num_gamepad - 1):
+                    new_idx = get_idx_from_grid(col, max_rows)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+                elif row < max_rows:
+                    new_idx = get_idx_from_grid(col, row + 1)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+            elif event.value[0] == -1:
+                if col == 1:
+                    new_idx = get_idx_from_grid(0, row)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
+            elif event.value[0] == 1:
+                if col == 0:
+                    new_idx = get_idx_from_grid(1, row)
+                    if new_idx is not None:
+                        self.current_selection = new_idx
 
         # Validation avec bouton A ou Start
         elif event.type == JOYBUTTONDOWN:
