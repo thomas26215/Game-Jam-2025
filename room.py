@@ -49,7 +49,7 @@ class Room:
         else:
             self.obstacles = []
 
-    def generate_walls_and_doors(self, grid, forced_doors=None):
+    def generate_walls_and_doors(self, grid, forced_doors=None, exclusive=False):
         """Génère les portes selon la grille et éventuellement des portes forcées."""
         self.doors.clear()
         r, c = self.position
@@ -57,21 +57,31 @@ class Room:
 
         directions = []
 
-        # Vérifie les voisins ou les portes forcées
-        if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
-            self.doors.append(('up', pygame.Rect(0, 0, SW, DOOR_SIZE)))
-            directions.append('up')
-        if (r + 1, c) in grid or (forced_doors and 'down' in forced_doors):
-            self.doors.append(('down', pygame.Rect(0, SH - DOOR_SIZE, SW, DOOR_SIZE)))
-            directions.append('down')
-        if (r, c - 1) in grid or (forced_doors and 'left' in forced_doors):
-            self.doors.append(('left', pygame.Rect(0, 0, DOOR_SIZE, SH)))
-            directions.append('left')
-        if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
-            self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
-            directions.append('right')
+        if exclusive and forced_doors:  # Only keep the forced ones
+            dirs = forced_doors
+        else:
+            dirs = []
+            if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
+                dirs.append('up')
+            if (r + 1, c) in grid or (forced_doors and 'down' in forced_doors):
+                dirs.append('down')
+            if (r, c - 1) in grid or (forced_doors and 'left' in forced_doors):
+                dirs.append('left')
+            if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
+                dirs.append('right')
 
-        if directions:
+        # Create actual Rect doors
+        for d in dirs:
+            if d == 'up':
+                self.doors.append(('up', pygame.Rect(0, 0, SW, DOOR_SIZE)))
+            elif d == 'down':
+                self.doors.append(('down', pygame.Rect(0, SH - DOOR_SIZE, SW, DOOR_SIZE)))
+            elif d == 'left':
+                self.doors.append(('left', pygame.Rect(0, 0, DOOR_SIZE, SH)))
+            elif d == 'right':
+                self.doors.append(('right', pygame.Rect(SW - DOOR_SIZE, 0, DOOR_SIZE, SH)))
+
+        if dirs:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
             if (self.position == (0, 0)) and ('right' in directions_sorted):
@@ -204,7 +214,7 @@ def generate_random_grid(num_rooms=3):
 
     # Salle de départ
     grid[start] = Room(position=start, nb_medicaments=1, nb_ennemis=0)
-    grid[start].generate_walls_and_doors(grid, forced_doors=['right'])
+    grid[start].generate_walls_and_doors(grid, forced_doors=['right'], exclusive=True)
 
     # Salle à droite du départ
     enemy_room_pos = (0, 1)
