@@ -316,6 +316,7 @@ def main():
                 fade_start_time = None
             continue
 
+
         # ----------- Menus & sous-menus -----------
         if state in [STATE_MENU, STATE_PAUSE, STATE_OPTIONS, STATE_GAME_OVER, STATE_VICTORY, "CONTROLS"]:
             game_surface.fill((0, 0, 0))
@@ -350,7 +351,7 @@ def main():
                     new_state = pop_state(state_stack)
                     state_stack[-1] = new_state
 
-                elif action in ("CONTROLS", STATE_OPTIONS, "CREDITS"):
+                elif action in ("CONTROLS", STATE_OPTIONS, "CREDITS", "TUTORIAL"):
                     # tout sous-menu : on empile
                     push_state(state_stack, action)
 
@@ -371,7 +372,23 @@ def main():
                 if event.type == QUIT:
                     running = False
                 action = handle_credits_event(event)
-                if action == STATE_BACK:
+                if action == STATE_BACK or action == STATE_MENU:
+                    pop_state(state_stack)
+
+        # ----------- Menu didacticiel séparé -----------
+        elif state == "TUTORIAL":
+            game_surface.fill((0, 0, 0))
+            from menu import draw_tutorial_menu, handle_tutorial_event
+            draw_tutorial_menu(game_surface)
+            screen.fill((0, 0, 0))
+            screen.blit(game_surface, (center_x, center_y))
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                action = handle_tutorial_event(event)
+                if action == STATE_MENU:
                     pop_state(state_stack)
 
         # ----------- Jeu en cours -----------

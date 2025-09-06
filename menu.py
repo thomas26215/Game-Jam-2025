@@ -154,52 +154,60 @@ class Menu:
         except:
             obra_font = pygame.font.SysFont("Arial", 36)
 
-        # Boutons stylisés
-        for i, button in enumerate(self.buttons):
-            color =  (0, 150, 0)if i == self.current_selection else (44, 68, 132)
-            text_surface = obra_font.render(button["text"], True, color)
-            y_pos = 280 + i * 100
-            button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
-
-
-            # Fond arrondi stylisé
-            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
-            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
-            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
-
-            # Texte
-            surface.blit(text_surface, button_rect)
-
-            # Draw slider if it's the volume option
-            if button["action"] == "VOLUME_SLIDER":
-                bar_width = 200
-                bar_height = 8
-                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
-                bar_y = y_pos + 40
-
-                # Bar background
-                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
-                # Fill based on volume
-                fill_width = int(bar_width * self.settings.music_volume)
-                pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
-
-                # Knob
-                knob_x = bar_x + fill_width - 5
-                knob_y = bar_y - 6
-                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
-            # Draw slider for vision radius
-            if button["action"] == "VISION_SLIDER":
-                bar_width = 200
-                bar_height = 8
-                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
-                bar_y = y_pos + 40
-                min_radius, max_radius = 100, 600
-                pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
-                fill_width = int(bar_width * (self.settings.vision_radius - min_radius) / (max_radius - min_radius))
-                pygame.draw.rect(surface, (0, 200, 200), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
-                knob_x = bar_x + fill_width - 5
-                knob_y = bar_y - 6
-                pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
+        # Disposition spéciale pour le menu principal (5 boutons)
+        if self.title_image and len(self.buttons) == 5:
+            # Nouvelle grille : 2 colonnes, 3 lignes, dernier bouton centré
+            grid = [
+                (SCREEN_WIDTH//2 - 110, 300), # Jouer (col 1, ligne 1)
+                (SCREEN_WIDTH//2 + 110, 300), # Didacticiel (col 2, ligne 1)
+                (SCREEN_WIDTH//2 - 110, 400), # Options (col 1, ligne 2)
+                (SCREEN_WIDTH//2 + 110, 400), # Crédits (col 2, ligne 2)
+                (SCREEN_WIDTH//2, 500)        # Quitter (ligne 3, centré)
+            ]
+            for i, button in enumerate(self.buttons):
+                color = (0, 150, 0) if i == self.current_selection else (44, 68, 132)
+                text_surface = obra_font.render(button["text"], True, color)
+                x, y = grid[i]
+                button_rect = text_surface.get_rect(center=(x, y))
+                button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+                pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+                surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+                surface.blit(text_surface, button_rect)
+        else:
+            # Disposition classique verticale pour les autres menus
+            for i, button in enumerate(self.buttons):
+                color = (0, 150, 0) if i == self.current_selection else (44, 68, 132)
+                text_surface = obra_font.render(button["text"], True, color)
+                y_pos = 280 + i * 70
+                button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+                button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+                pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+                surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+                surface.blit(text_surface, button_rect)
+                # Sliders inchangés
+                if button["action"] == "VOLUME_SLIDER":
+                    bar_width = 200
+                    bar_height = 8
+                    bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+                    bar_y = y_pos + 40
+                    pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+                    fill_width = int(bar_width * self.settings.music_volume)
+                    pygame.draw.rect(surface, (0, 200, 0), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
+                    knob_x = bar_x + fill_width - 5
+                    knob_y = bar_y - 6
+                    pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
+                if button["action"] == "VISION_SLIDER":
+                    bar_width = 200
+                    bar_height = 8
+                    bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+                    bar_y = y_pos + 40
+                    min_radius, max_radius = 100, 600
+                    pygame.draw.rect(surface, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+                    fill_width = int(bar_width * (self.settings.vision_radius - min_radius) / (max_radius - min_radius))
+                    pygame.draw.rect(surface, (0, 200, 200), (bar_x, bar_y, fill_width, bar_height), border_radius=4)
+                    knob_x = bar_x + fill_width - 5
+                    knob_y = bar_y - 6
+                    pygame.draw.rect(surface, (255, 255, 255), (knob_x, knob_y, 10, 20), border_radius=5)
         
     def handle_event(self, event):
     # clavier inchangé
@@ -266,17 +274,11 @@ class Menu:
 def init_menus(settings):
     # Vérifier que les fichiers existent
     import os
-    
-    image_files = [
-        "./wordsGame/contagium.png",
-        "./wordsGame/playPause.png", 
-        "./wordsGame/gameOver.png",
-        "./wordsGame/victory.png"
-    ]
-    
+      
     
     main_menu = Menu(settings, "wordsGame/contagium.png")
     main_menu.add_button("Jouer", STATE_PLAY)
+    main_menu.add_button("Didacticiel", "TUTORIAL")
     main_menu.add_button("Options", STATE_OPTIONS)
     main_menu.add_button("Crédits", "CREDITS")
     main_menu.add_button("Quitter", "QUIT")
@@ -306,8 +308,87 @@ def init_menus(settings):
         STATE_OPTIONS: options_menu,
         STATE_GAME_OVER: game_over_menu,
         "CONTROLS": controls_menu,
-    "CREDITS": None  # Géré par fonction
+        "CREDITS": None,  # Géré par fonction
+        "TUTORIAL": None  # Géré par fonction
     }
+# --- Fonction d'affichage et gestion du menu didacticiel ---
+def draw_tutorial_menu(surface):
+    try:
+        background = pygame.image.load("right.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except:
+        background = None
+    if background:
+        surface.blit(background, (0, 0))
+    else:
+        surface.fill((20, 20, 20))
+
+    # Titre
+    try:
+        obra_font = pygame.font.Font("assets/ObraLetra.ttf", 48)
+    except:
+        obra_font = pygame.font.SysFont("Arial", 48, bold=True)
+    try:
+        title = pygame.image.load("wordsGame/tutorial.png").convert_alpha()
+        title = pygame.transform.scale(title, (int(title.get_width() * 0.4), int(title.get_height() * 0.4)))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 130))
+        surface.blit(title, title_rect)
+    except:
+        title_surface = obra_font.render("Didacticiel", True, (255, 255, 0))
+        title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 130))
+        surface.blit(title_surface, title_rect)
+
+    # Texte du didacticiel (à personnaliser)
+    tutorial_lines = [
+        "Bienvenue dans Contagium !",
+        "Déplacez votre personnage avec les flèches ou ZQSD.",
+        "Attaquez avec ESPACE ou le bouton A.",
+        "Collectez les potions pour survivre.",
+        "Explorez les salles et évitez les ennemis.",
+        "Utilisez le menu Options pour personnaliser les contrôles.",
+        "Bonne chance !"
+    ]
+    small_font = pygame.font.SysFont("Arial", 26)
+    box_width = SCREEN_WIDTH - 200
+    box_height = len(tutorial_lines) * 36 + 2 * 30
+    start_x = (SCREEN_WIDTH - box_width) // 2
+    start_y = 220
+
+    # Fond semi-transparent pour le texte
+    bg_surface = pygame.Surface((box_width, box_height))
+    bg_surface.set_alpha(180)
+    bg_surface.fill((0, 0, 0))
+    surface.blit(bg_surface, (start_x, start_y))
+
+    for i, line in enumerate(tutorial_lines):
+        text_surface = small_font.render(line, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(topleft=(start_x + 40, start_y + 30 + i * 36))
+        surface.blit(text_surface, text_rect)
+
+    # Bouton Retour
+    button_text = "Retour"
+    try:
+        button_font = pygame.font.Font("assets/ObraLetra.ttf", 32)
+    except:
+        button_font = pygame.font.SysFont("Arial", 32, bold=True)
+    button_surface = button_font.render(button_text, True, (255, 0, 0))
+    button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 60))
+
+    button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)
+    pygame.draw.rect(button_bg, (0, 0, 0, 180), button_bg.get_rect(), border_radius=12)
+    surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+    surface.blit(button_surface, button_rect)
+
+def handle_tutorial_event(event):
+    if event.type == KEYDOWN:
+        if event.key in (K_RETURN, K_ESCAPE):
+            return STATE_MENU
+    elif event.type == JOYBUTTONDOWN:
+        if event.button in (0, 7):
+            return STATE_MENU
+    elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+        return STATE_MENU
+    return None
 # --- Fonction d'affichage et gestion du menu crédits ---
 def draw_credits_menu(surface):
     try:
