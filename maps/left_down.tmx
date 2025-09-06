@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="23">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="23">
  <tileset firstgid="1" source="../tileset/overworld_tileset_grass.tsx"/>
  <tileset firstgid="253" source="../tileset/houses.tsx"/>
  <tileset firstgid="4349" source="../tileset/Dungeon_Autotiles.tsx"/>
@@ -242,7 +242,7 @@
  </layer>
  <objectgroup id="5" name="Walls">
   <object id="2" x="0.867172" y="426.649" width="383.29" height="266.222"/>
-  <object id="3" x="383.29" y="491.686" width="93.6546" height="198.582"/>
+  <object id="3" x="383.29" y="491.686" width="97.6546" height="198.582"/>
   <object id="4" x="385.892" y="458.734" width="33.8197" height="32.0854"/>
   <object id="5" x="386.759" y="433.586" width="19.0778" height="23.4136"/>
   <object id="6" x="423.18" y="475.21" width="19.945" height="15.6091"/>

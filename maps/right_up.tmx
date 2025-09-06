@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.1-99-gec89c545" orientation="orthogonal" renderorder="right-up" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="17">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-up" width="64" height="43" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="17">
  <tileset firstgid="1" source="../tileset/houses.tsx"/>
  <tileset firstgid="4097" source="../tileset/Dungeon_Autotiles.tsx"/>
  <tileset firstgid="4397" source="../tileset/objects_demo.tsx"/>
@@ -241,8 +241,8 @@
  </layer>
  <objectgroup id="3" name="Walls">
   <object id="1" x="-1" y="-5" width="440" height="170"/>
-  <object id="2" x="581" y="-3" width="449" height="291"/>
-  <object id="3" x="1" y="405" width="1028" height="289"/>
+  <object id="2" x="575.667" y="-3" width="454.333" height="291"/>
+  <object id="3" x="1" y="400.333" width="1028" height="293.667"/>
   <object id="4" x="2" y="158" width="191" height="246"/>
   <object id="5" x="605" y="290" width="20" height="18"/>
   <object id="6" x="715" y="286" width="33" height="31"/>
@@ -252,7 +252,7 @@
   <object id="11" x="563" y="258" width="31" height="19"/>
   <object id="13" x="229" y="110"/>
   <object id="14" x="229" y="110"/>
-  <object id="15" x="423" y="1" width="38" height="107"/>
+  <object id="15" x="423" y="1" width="40.6667" height="107"/>
   <object id="16" x="561" y="0" width="27" height="22"/>
  </objectgroup>
 </map>
