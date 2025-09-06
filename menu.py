@@ -371,7 +371,7 @@ def draw_tutorial_menu(surface):
         button_font = pygame.font.Font("assets/ObraLetra.ttf", 32)
     except:
         button_font = pygame.font.SysFont("Arial", 32, bold=True)
-    button_surface = button_font.render(button_text, True, (255, 0, 0))
+    button_surface = button_font.render(button_text, True, (0, 150, 0))
     button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 60))
 
     button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)
@@ -493,7 +493,7 @@ def draw_credits_menu(surface):
         button_font = pygame.font.Font("assets/ObraLetra.ttf", 32)
     except:
         button_font = pygame.font.SysFont("Arial", 32, bold=True)
-    button_surface = button_font.render(button_text, True, (255, 0, 0))
+    button_surface = button_font.render(button_text, True, (0, 150, 0))
     button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, start_y + box_height + 60))
 
     button_bg = pygame.Surface((button_surface.get_width() + 24, button_surface.get_height() + 14), pygame.SRCALPHA)

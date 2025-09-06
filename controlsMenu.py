@@ -92,41 +92,87 @@ class ControlsMenu:
             surface.blit(self.background, (0, 0))
         else:
             surface.fill((30, 30, 30))
-        
+
         # Titre
-        title = pygame.image.load("wordsGame/controle.png").convert_alpha()
-        title = pygame.transform.scale(title, (int(title.get_width() * 0.4), int(title.get_height() * 0.4)))
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 130))
-        surface.blit(title, title_rect)
-        
+        try:
+            obra_font = pygame.font.Font("assets/ObraLetra.ttf", 25)
+        except:
+            obra_font = pygame.font.SysFont("Arial", 25)
+        try:
+            title = pygame.image.load("wordsGame/controle.png").convert_alpha()
+            title = pygame.transform.scale(title, (int(title.get_width() * 0.4), int(title.get_height() * 0.4)))
+            title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 130))
+            surface.blit(title, title_rect)
+        except:
+            title_surface = obra_font.render("Contrôles", True, (255, 255, 0))
+            title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 130))
+            surface.blit(title_surface, title_rect)
+
         # Message d'attente
         if self.waiting_for_key:
-            wait_text = FONT.render("Appuyez sur une touche clavier...", True, (255, 100, 100))
+            wait_text = obra_font.render("Appuyez sur une touche clavier...", True, (255, 100, 100))
             wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
             surface.blit(wait_text, wait_rect)
         elif self.waiting_for_gamepad:
-            wait_text = FONT.render("Appuyez sur un bouton de manette...", True, (255, 100, 100))
+            wait_text = obra_font.render("Appuyez sur un bouton de manette...", True, (255, 100, 100))
             wait_rect = wait_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
             surface.blit(wait_text, wait_rect)
-        
-        # Boutons (plus compacts)
-        for i, button in enumerate(self.buttons):
-            color = (255, 0, 0) if i == self.current_selection else (255, 255, 255)
-            if (self.waiting_for_key or self.waiting_for_gamepad) and i == self.current_selection:
+
+        # Séparer clavier et manette
+        keyboard_buttons = [b for b in self.buttons if b.get("device") == "keyboard"]
+        gamepad_buttons = [b for b in self.buttons if b.get("device") == "gamepad"]
+        special_buttons = [b for b in self.buttons if b.get("device") is None]
+
+        # Calculer la sélection courante
+        total_grid = keyboard_buttons + gamepad_buttons + special_buttons
+        selection_idx = self.current_selection
+
+        # Affichage grille
+        col_x = [SCREEN_WIDTH//2 - 220, SCREEN_WIDTH//2 + 220]
+        start_y = 220
+        row_height = 60
+        max_rows = max(len(keyboard_buttons), len(gamepad_buttons))
+
+        # Clavier à gauche
+        for i, button in enumerate(keyboard_buttons):
+            color = (0, 150, 0) if selection_idx == i else (44, 68, 132)
+            if (self.waiting_for_key or self.waiting_for_gamepad) and selection_idx == i:
                 color = (255, 100, 100)
-            
-            # Police plus petite pour plus de boutons
-            small_font = pygame.font.SysFont("Arial", 24)
-            button_surface = small_font.render(button["text"], True, color)
-            y_pos = 120 + i * 35  # Espacement réduit
-            button_rect = button_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
-            
-            # Fond semi-transparent
-            button_bg = pygame.Surface((button_surface.get_width() + 20, button_surface.get_height() + 5))
-            button_bg.set_alpha(128)
-            button_bg.fill((0, 0, 0))
-            surface.blit(button_bg, (button_rect.x - 10, button_rect.y - 2))
-            surface.blit(button_surface, button_rect)
+            text_surface = obra_font.render(button["text"], True, color)
+            y_pos = start_y + i * row_height
+            button_rect = text_surface.get_rect(center=(col_x[0], y_pos))
+            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+            surface.blit(text_surface, button_rect)
+
+        # Manette à droite
+        for i, button in enumerate(gamepad_buttons):
+            idx = len(keyboard_buttons) + i
+            color = (0, 150, 0) if selection_idx == idx else (44, 68, 132)
+            if (self.waiting_for_key or self.waiting_for_gamepad) and selection_idx == idx:
+                color = (255, 100, 100)
+            text_surface = obra_font.render(button["text"], True, color)
+            y_pos = start_y + i * row_height
+            button_rect = text_surface.get_rect(center=(col_x[1], y_pos))
+            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+            surface.blit(text_surface, button_rect)
+
+        # Boutons spéciaux centrés en dessous
+        for i, button in enumerate(special_buttons):
+            idx = len(keyboard_buttons) + len(gamepad_buttons) + i
+            color = (0, 150, 0) if selection_idx == idx else (44, 68, 132)
+            if (self.waiting_for_key or self.waiting_for_gamepad) and selection_idx == idx:
+                color = (255, 100, 100)
+            text_surface = obra_font.render(button["text"], True, color)
+            y_pos = start_y + max_rows * row_height + 40 + i * row_height
+            button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
+            button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
+            pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
+            surface.blit(button_bg, (button_rect.x - 12, button_rect.y - 7))
+            surface.blit(text_surface, button_rect)
     
     def handle_event(self, event):
         if self.waiting_for_key:
