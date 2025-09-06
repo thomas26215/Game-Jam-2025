@@ -74,7 +74,11 @@ class Room:
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
-            self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
+            if (self.position == (0, 0)) and ('right' in directions_sorted):
+                print("Salle de départ, porte droite forcée")
+                self.tmx_file = "maps/right.tmx"
+            else:
+                self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
             #print("Chargement TMX :", self.tmx_file)
         else:
             self.tmx_file = None
@@ -233,6 +237,8 @@ def generate_random_grid(num_rooms=3):
     final_room = grid[farthest_pos]
     final_room.nb_enemies_in_room = 8
     final_room.is_final = True
+    # Génère les portes et la map pour la salle finale (portail)
+    final_room.generate_walls_and_doors(grid, forced_doors=['left'])
 
     # --- Répartition des zombies dans les 9 salles ---
     normal_rooms = [room for pos, room in grid.items() if pos != start and not getattr(room, "is_final", False)]
