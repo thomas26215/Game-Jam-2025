@@ -217,6 +217,19 @@ class GameManager:
 
         # Marquer la salle comme visitée
         self.visited_rooms.add(self.current_pos)
+      
+    def player_on_portal_interact(self):
+        keys = pygame.key.get_pressed()
+        interact_pressed = any(keys[key] for key in self.settings.get_control("interact", "keyboard"))
+        if self.player.joystick and not interact_pressed:
+            interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
+        
+        on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
+        
+        if on_portal and interact_pressed:
+            self.teleport_to_start()
+            return True
+        return False  
         
     def draw(self, surface, quest):
         self.current_room.draw(surface)
@@ -415,6 +428,10 @@ def main():
             game_manager.update_enemies()
             game_manager.update_medicaments()
             game_manager.try_change_room()
+
+            if game_manager.player_on_portal_interact():
+                quest = HEAL_INFECTED
+
 
             if game_manager.player.health <= 0:
                 state_stack[-1] = "FADE_TO_GAME_OVER"
