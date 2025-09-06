@@ -339,8 +339,8 @@ def main():
                     running = False
 
                 elif action == STATE_PLAY:
-                    # Si on lance une partie depuis le menu principal
-                    if state == STATE_MENU:
+                    # Si on lance une partie depuis le menu principal ou le game over
+                    if state in [STATE_MENU, STATE_GAME_OVER]:
                         game_manager.init_game()
                         state_stack = [STATE_PLAY]   # on remplace la pile par PLAY
                     else:

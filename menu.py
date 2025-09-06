@@ -154,8 +154,8 @@ class Menu:
         except:
             obra_font = pygame.font.SysFont("Arial", 36)
 
-        # Disposition spéciale pour le menu principal (5 boutons)
-        if self.title_image and len(self.buttons) == 5:
+        # Disposition spéciale pour le menu principal (5 boutons, premier texte = Jouer)
+        if self.buttons[0]["text"] == "Jouer":
             # Nouvelle grille : 2 colonnes, 3 lignes, dernier bouton centré
             grid = [
                 (SCREEN_WIDTH//2 - 110, 300), # Jouer (col 1, ligne 1)
@@ -178,7 +178,7 @@ class Menu:
             for i, button in enumerate(self.buttons):
                 color = (0, 150, 0) if i == self.current_selection else (44, 68, 132)
                 text_surface = obra_font.render(button["text"], True, color)
-                y_pos = 280 + i * 70
+                y_pos = 280 + i * 85
                 button_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
                 button_bg = pygame.Surface((text_surface.get_width() + 24, text_surface.get_height() + 14), pygame.SRCALPHA)
                 pygame.draw.rect(button_bg, (220, 220, 220, 200), button_bg.get_rect(), border_radius=18)
