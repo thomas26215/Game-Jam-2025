@@ -341,12 +341,12 @@ def draw_tutorial_menu(surface):
     # Texte du didacticiel (à personnaliser)
     tutorial_lines = [
         "Bienvenue dans Contagium !",
-        "Déplacez votre personnage avec les flèches ou ZQSD.",
-        "Attaquez avec ESPACE ou le bouton A.",
-        "Collectez les potions pour survivre.",
-        "Explorez les salles et évitez les ennemis.",
-        "Utilisez le menu Options pour personnaliser les contrôles.",
-        "Bonne chance !"
+        "Ici, vous incarnez un médecin de la peste. Le dernier espoir d’une ville ravagée par la maladie.",
+        "Votre mission retrouver les potions dispersés à travers les rues désertées, afin de sauver les habitants encore en vie.",
+        "Mais attention : la cité est envahie de pestiférés, des âmes désespérées qui ayant perdu leur conscience. Ne les laissez pas vous toucher, sous peine de devenir l’un d’eux !",
+        "Une fois les potions récupérées, vous devrez trouver le portail du monde des pestiférés. Mais attention, c'est un aller sans retour.",
+        "Vous aurez le nombre de potions ramassées affiché en haut à gauche de l’écran. Attention à ne pas les gaspiller !",
+        "Souvenez-vous : votre but n’est pas de tuer les pestiférés… mais de les sauver en leur lançant les potions récupérés."
     ]
     small_font = pygame.font.SysFont("Arial", 26)
     box_width = SCREEN_WIDTH - 200
