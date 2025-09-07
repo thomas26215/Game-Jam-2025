@@ -13,7 +13,7 @@ class Player(pygame.sprite.Sprite):
         self.settings = settings
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.speed = 3
+        self.speed = 3.5
         self.original_speed = self.speed  # Sauvegarde de la vitesse
         self.direction = "right"
         self.state = "idle"

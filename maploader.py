@@ -22,7 +22,6 @@ class MapLoader:
             self.height = SCREEN_HEIGHT
             return
 
-        #print(f"Tentative de chargement du TMX : {tmx_file}")
         self.tmx_data = pytmx.load_pygame(tmx_file)
         self.width = self.tmx_data.width * self.tmx_data.tilewidth
         self.height = self.tmx_data.height * self.tmx_data.tileheight

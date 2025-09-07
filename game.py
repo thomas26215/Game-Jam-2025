@@ -72,7 +72,6 @@ class GameManager:
                     
                     break  # On évite le double-hit
             self.player.has_hit_enemy = True
-            print("Nombre de ressuscités :", self.resurrected_count)
 
 
     def update_enemies(self):

@@ -85,7 +85,6 @@ class Room:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
             if (self.position == (0, 0)) and ('right' in directions_sorted):
-                print("Salle de départ, porte droite forcée")
                 self.tmx_file = "maps/right.tmx"
             else:
                 self.tmx_file = f"maps/{'_'.join(directions_sorted)}.tmx"
@@ -160,8 +159,12 @@ class Room:
 
         for pos in self.medicaments_positions:
             x, y = pos
-            med = Medicament(x, y, player, screen_width, screen_height,
-                             spritesheet_path="potion/PotionBlue.png", frame_width=22, frame_height=37)
+            med = Medicament(
+                x, y, player, screen_width, screen_height,
+                spritesheet_path="potion/PotionBlue.png",
+                frame_width=22, frame_height=37,
+                activation_distance=player.settings.vision_radius 
+            )
             med.collected = self.medicaments_state[pos]
             self.medicaments.append(med)
 
@@ -254,8 +257,8 @@ def generate_random_grid(num_rooms=2, total_zombies=10):
 
     # --- Répartition des zombies dans les 9 salles ---
     normal_rooms = [room for pos, room in grid.items() if pos != start and not getattr(room, "is_final", False)]
-    print  ("Total zombies à répartir :", total_zombies)
-    zombies_left = total_zombies
+    # Réserve 8 zombies pour la salle finale
+    zombies_left = total_zombies - 8
 
     for room in normal_rooms:
         room.nb_enemies_in_room = 0
@@ -270,7 +273,6 @@ def generate_random_grid(num_rooms=2, total_zombies=10):
 
     # Répartition des médicaments 
     total_meds = total_zombies
-    #print("Total zombies:", total_zombies, "=> Médicaments:", total_meds)
     all_rooms_except_start = [room for pos, room in grid.items() if pos != start]
     for _ in range(total_meds):
         room = random.choice(all_rooms_except_start)
@@ -295,7 +297,6 @@ def draw_portal_if_boss_room(surface, room, player, settings, is_active = True):
                 100, 100
             )
         room.portail.draw(surface)
-        print(is_active)
 
         if is_active:
 

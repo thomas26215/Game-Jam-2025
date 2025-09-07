@@ -2,7 +2,7 @@ import pygame
 import math
 
 class Medicament(pygame.sprite.Sprite):
-    def __init__(self, x, y, player, screen_width, screen_height, spritesheet_path="potion/PotionBlue.png", frame_width=22, frame_height=37):
+    def __init__(self, x, y, player, screen_width, screen_height, spritesheet_path="potion/PotionBlue.png", frame_width=22, frame_height=37, activation_distance=300):
         super().__init__()
         pygame.mixer.init()  # Initialiser le mixer pour le son
         # Surface avec canal alpha pour gérer la transparence
@@ -13,7 +13,7 @@ class Medicament(pygame.sprite.Sprite):
         self.screen_height = screen_height
         self.frame_width = frame_width
         self.frame_height = frame_height
-        self.activation_distance = 200
+        self.activation_distance = activation_distance
         self.collected = False  # état du médicament
         
         # Charger le son de collecte
