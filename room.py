@@ -24,6 +24,7 @@ class Room:
         self.map_loader = MapLoader()
         self.tmx_file = None
         self.nb_enemies_in_room = nb_ennemis
+        self.potions_disabled = False #Sert à désactiver les potions quand on les supprime au passage du niveau "sauver les infectés"
 
     def load_map(self):
         if self.tmx_file and os.path.exists(self.tmx_file):
@@ -145,7 +146,7 @@ class Room:
             self.enemies.append(enemy)
 
         # --- Génération des médicaments ---
-        if not self.medicaments_positions:
+        if not self.medicaments_positions and not self.potions_disabled:
             for _ in range(self.nb_medicaments):
                 while True:
                     x = random.randint(20, screen_width - 20)
@@ -182,6 +183,7 @@ class Room:
         self.medicaments.clear()
         self.medicaments_positions.clear()
         self.medicaments_state.clear()
+        self.potions_disabled = True
 
     def draw(self, surface):
         if self.map_loader.tmx_data:
