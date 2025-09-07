@@ -282,7 +282,7 @@ def generate_random_grid(num_rooms=2, total_zombies=10):
 
 
 
-def draw_portal_if_boss_room(surface, room, player, settings):
+def draw_portal_if_boss_room(surface, room, player, settings, is_active = True):
     if hasattr(room, "is_final") and room.is_final:
         if not hasattr(room, "portail") or room.portail is None:
             from portail import Portail
@@ -292,28 +292,31 @@ def draw_portal_if_boss_room(surface, room, player, settings):
                 100, 100
             )
         room.portail.draw(surface)
+        print(is_active)
 
-        interact_keys = settings.get_control("interact", "keyboard")
-        def key_name(key_code):
-            key_names = {
-                pygame.K_e: "E", pygame.K_f: "F", pygame.K_r: "R", pygame.K_g: "G",
-                pygame.K_SPACE: "ESPACE", pygame.K_RETURN: "ENTRÉE",
-                pygame.K_UP: "↑", pygame.K_DOWN: "↓", 
-                pygame.K_LEFT: "←", pygame.K_RIGHT: "→"
-            }
-            return key_names.get(key_code, f"KEY_{key_code}")
-        
-        if interact_keys:
-            keys_text = " ou ".join([key_name(key) for key in interact_keys])
-            message = FONT.render(f"Appuyez sur {keys_text} pour rentrer", True, (255, 255, 0))
-        else:
-            message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
+        if is_active:
 
-        if player.hitbox.colliderect(room.portail.rect):
-            msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
-            msg_y = room.portail.rect.top - 30
-            surface.blit(message, (msg_x, msg_y))
-            return True
+            interact_keys = settings.get_control("interact", "keyboard")
+            def key_name(key_code):
+                key_names = {
+                    pygame.K_e: "E", pygame.K_f: "F", pygame.K_r: "R", pygame.K_g: "G",
+                    pygame.K_SPACE: "ESPACE", pygame.K_RETURN: "ENTRÉE",
+                    pygame.K_UP: "↑", pygame.K_DOWN: "↓", 
+                    pygame.K_LEFT: "←", pygame.K_RIGHT: "→"
+                }
+                return key_names.get(key_code, f"KEY_{key_code}")
+            
+            if interact_keys:
+                keys_text = " ou ".join([key_name(key) for key in interact_keys])
+                message = FONT.render(f"Appuyez sur {keys_text} pour rentrer", True, (255, 255, 0))
+            else:
+                message = FONT.render("Appuyez sur E pour rentrer", True, (255, 255, 0))
+
+            if player.hitbox.colliderect(room.portail.rect):
+                msg_x = SCREEN_WIDTH // 2 - message.get_width() // 2
+                msg_y = room.portail.rect.top - 30
+                surface.blit(message, (msg_x, msg_y))
+                return True
     return False
 
 def clear_all_medicaments_in_rooms(rooms):

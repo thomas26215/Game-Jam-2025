@@ -21,6 +21,7 @@ class GameManager:
         self.shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.VISION_RADIUS = self.settings.vision_radius
         self.total_zombies = random.randint(20, 40)
+        self.is_portal_active = True
 
     def init_game(self):
         self.grid = generate_random_grid(num_rooms=2, total_zombies = self.total_zombies)
@@ -165,7 +166,10 @@ class GameManager:
         if self.player.joystick and not interact_pressed:
             interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
 
-        on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
+        if self.is_portal_active:
+            on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
+        else:
+            on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings, is_active = False)
 
         if on_portal and interact_pressed:
             if quest == COLLECT_MEDECINE:
@@ -174,6 +178,7 @@ class GameManager:
                 clear_all_medicaments_in_rooms(self.grid)
                 return True
             else:  
+                self.is_portal_active = False
                 # 🔹 Mode HEAL_INFECTED
                 from room import generate_boss_room_for
                 from enemy import Enemy
@@ -183,6 +188,8 @@ class GameManager:
                 if final_room:
                     # Régénérer la salle du boss
                     generate_boss_room_for(final_room, self.grid)
+
+                    self.player.make_invisible_and_immobile()  # 3 sec d'invisibilité et immobilité
 
                     # Générer les ressuscités
                     for _ in range(self.resurrected_count):
@@ -261,7 +268,11 @@ class GameManager:
     def draw(self, surface, quest):
         self.current_room.draw(surface)
         self.current_room.draw_contents(surface)
-        draw_portal_if_boss_room(surface, self.current_room, self.player, self.settings)
+        if self.is_portal_active:
+            draw_portal_if_boss_room(surface, self.current_room, self.player, self.settings)
+        else:
+            draw_portal_if_boss_room(surface, self.current_room, self.player, self.settings, is_active = False)
+
         self.player.draw(surface)
 
         for enemy in self.current_room.enemies:

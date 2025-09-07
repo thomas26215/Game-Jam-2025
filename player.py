@@ -14,6 +14,7 @@ class Player(pygame.sprite.Sprite):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.speed = 3.5
+        self.original_speed = self.speed  # Sauvegarde de la vitesse
         self.direction = "right"
         self.state = "idle"
         self.moving = False
@@ -21,6 +22,7 @@ class Player(pygame.sprite.Sprite):
         self.attack_rect = None
         self.has_hit_enemy = False  
         self.hud = hud  
+        self.is_invisible = False  # Flag pour invisibilité
 
         # Chargement des animations
         self.walk_frames = self.load_frames(walk_spritesheet_path, frame_width, frame_height) if walk_spritesheet_path else []
@@ -52,7 +54,6 @@ class Player(pygame.sprite.Sprite):
         self.last_attack_time = 0
         self.throw_cooldown = 800  
         self.last_throw_time = 0
-
         self.hurt_timer = 0
 
         # Joystick
@@ -62,7 +63,6 @@ class Player(pygame.sprite.Sprite):
             self.joystick.init()
 
     def load_frames(self, path, frame_width, frame_height, scale=2):
-        """Charge une spritesheet et découpe les frames."""
         try:
             sheet = pygame.image.load(path).convert_alpha()
             frames = []
@@ -74,13 +74,10 @@ class Player(pygame.sprite.Sprite):
                     frame = pygame.transform.scale(frame, (frame_width * scale, frame_height * scale))
                     frames.append(frame)
             return frames
-        except pygame.error as e:
-            return []
-        except FileNotFoundError:
+        except (pygame.error, FileNotFoundError):
             return []
 
     def take_damage(self, amount):
-        """Inflige des dégâts au joueur."""
         if self.state not in ["dead", "hurt"]:
             self.health -= amount
             if self.health <= 0:
@@ -92,20 +89,13 @@ class Player(pygame.sprite.Sprite):
                 self.hurt_timer = pygame.time.get_ticks()
 
     def attack(self, attack_type):
-        """
-        Déclenche une attaque.
-        attack_type == 1 → attaque classique
-        attack_type != 1 → lancer de potion
-        """
         now = pygame.time.get_ticks()
-
         if attack_type == COLLECT_MEDECINE:
             if now - self.last_attack_time >= self.attack_cooldown and self.state not in ["attack", "hurt", "dead", "throw"]:
                 self.state = "attack"
                 self.current_frame = 0
                 self.last_attack_time = now
-                self.has_hit_enemy = False  # Réinitialise l'attaque
-
+                self.has_hit_enemy = False
                 attack_rect = self.rect.copy()
                 attack_rect.width += 30
                 attack_rect.height += 20
@@ -114,18 +104,14 @@ class Player(pygame.sprite.Sprite):
                 else:
                     attack_rect.x -= 20
                 self.attack_rect = attack_rect
-
-        # Lancer potion
         else:
             if now - self.last_throw_time >= self.throw_cooldown and self.state not in ["attack", "hurt", "dead", "throw"] and self.hud.use_med():
                 self.state = "throw"
                 self.current_frame = 0
                 self.last_throw_time = now
-                self.has_hit_enemy = False  # Réinitialise l'attaque pour le throw
-
-                # ⚡ Crée un attack_rect sur le joueur comme pour l'attaque normale
+                self.has_hit_enemy = False
                 attack_rect = self.rect.copy()
-                attack_rect.width += 40  # potion peut avoir une zone un peu plus grande
+                attack_rect.width += 40
                 attack_rect.height += 30
                 if self.direction == "right":
                     attack_rect.x += 20
@@ -134,11 +120,12 @@ class Player(pygame.sprite.Sprite):
                 self.attack_rect = attack_rect
 
     def update(self, keys, current_room):
-        """Met à jour le joueur."""
+        if self.is_invisible:
+            return  # Bloque tout mouvement et animation si invisible
+
         dx = dy = 0
         self.moving = False
 
-        # Si animation spéciale
         if self.state in ["attack", "hurt", "dead", "throw"]:
             self.animate()
             return
@@ -193,7 +180,9 @@ class Player(pygame.sprite.Sprite):
         self.animate()
 
     def animate(self):
-        """Gère les animations du joueur."""
+        if self.is_invisible:
+            return  # Ne rien faire si invisible
+
         if self.state == "idle":
             frames = self.idle_frames
         elif self.state == "walk":
@@ -215,7 +204,6 @@ class Player(pygame.sprite.Sprite):
         if not frames:
             return
 
-        # Gestion spéciale attaque et lancer
         if self.state in ["attack", "throw"]:
             if int(self.current_frame) >= len(frames) - 1:
                 self.image = frames[-1].copy()
@@ -225,7 +213,6 @@ class Player(pygame.sprite.Sprite):
                 self.current_frame = 0
                 return
 
-        # Animation générale
         self.current_frame += self.animation_speed
         if self.current_frame >= len(frames):
             self.current_frame = 0
@@ -234,19 +221,24 @@ class Player(pygame.sprite.Sprite):
         if self.direction == "left":
             self.image = pygame.transform.flip(self.image, True, False)
 
-
     def draw(self, surface):
-        """Affiche le joueur et ses hitbox pour debug."""
-        # Sprite
+        if self.is_invisible:
+            return  # Ne rien dessiner si invisible
+
         surface.blit(self.image, self.rect)
-
-        # Hitbox réelle (utilisée pour collisions)
         pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
-
-        # Rect englobant du sprite (utile pour comparer)
         pygame.draw.rect(surface, (255, 255, 0), self.rect, 2)
-
-        # Hitbox d’attaque si elle est active
         if self.attack_rect:
             pygame.draw.rect(surface, (0, 255, 0), self.attack_rect, 2)
+
+    def make_invisible_and_immobile(self):
+        """Rend le joueur invisible et empêche tout mouvement ou action."""
+        self.is_invisible = True
+        self.speed = 0
+        self.moving = False
+        self.state = "idle"
+        self.attack_rect = None
+        # On peut rendre l'image complètement transparente si voulu
+        self.image = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        self.image.fill((0, 0, 0, 0))
 
