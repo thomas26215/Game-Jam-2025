@@ -38,6 +38,10 @@ class Player(pygame.sprite.Sprite):
         self.current_frame = 0
         self.animation_speed = 0.15
 
+        # Charger le son de throw
+        self.throw_sound = pygame.mixer.Sound('bruitages/glass-breaking-386153.mp3')
+        pygame.mixer.music.set_volume(0.2)
+
         # Image par défaut
         if self.idle_frames:
             self.image = self.idle_frames[0].copy()
@@ -113,6 +117,7 @@ class Player(pygame.sprite.Sprite):
                 attack_rect = self.rect.copy()
                 attack_rect.width += 40
                 attack_rect.height += 30
+                self.throw_sound.play() 
                 if self.direction == "right":
                     attack_rect.x += 20
                 else:
