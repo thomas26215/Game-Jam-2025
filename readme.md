@@ -3,12 +3,12 @@
 ## Description
 Ce projet est le résultat d'une Game Jam organisée par nos professeurs, durant laquelle notre équipe a conçu et développé ce jeu en seulement 3 jours et demi. L’objectif était de créer un jeu original respectant un thème imposé (médieval) avec la fonctionnalité apparaître disparaître, en collaborant efficacement malgré la contrainte de temps.
 
-## Contexte
-La Game Jam est une compétition intense de création de jeux vidéo en équipe sur un temps limité. Ce défi nous a permis de tester et renforcer nos compétences en programmation, design, game design, et gestion de projet, tout en stimulant notre créativité et notre esprit d’équipe.
-
 ## Fonctionnalités principales
 - Récupérer les potions
 - Soignes les infectés
+
+## Objectif du jeu
+Bienvenue dans Contagium ! Dans ce jeu, vous incarnez un médecin de la peste, véritable dernier espoir pour une ville ravagée par une maladie. Votre mission est de retrouver les potions dispersées à travers les rues désertes afin de sauver les habitants encore en vie. Cependant, la cité est infestée de pestiférés, des âmes perdues qui ont perdu toute conscience. Il faut être prudent et éviter qu’ils ne vous touchent, sous peine de devenir l’un d’eux. Une fois toutes les potions récupérées, votre défi sera de trouver le portail menant au monde des pestiférés, sachant que ce passage est un aller simple. Le nombre de potions collectées s’affiche en haut à gauche de l’écran : faites attention à ne pas les gaspiller. Enfin, rappelez-vous que votre objectif n’est pas de tuer les pestiférés, mais bien de les sauver en leur lançant les potions récoltées.
 
 ## Installation et lancement
 1. Cloner ce dépôt  
