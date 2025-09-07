@@ -40,7 +40,7 @@ class Player(pygame.sprite.Sprite):
 
         # Charger le son de throw
         self.throw_sound = pygame.mixer.Sound('bruitages/glass-breaking-386153.mp3')
-        pygame.mixer.music.set_volume(0.2)
+        self.throw_sound.set_volume(0.2)
 
         # Image par défaut
         if self.idle_frames:

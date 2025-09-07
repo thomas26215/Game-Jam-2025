@@ -18,7 +18,7 @@ class Medicament(pygame.sprite.Sprite):
         
         # Charger le son de collecte
         self.collect_sound = pygame.mixer.Sound('bruitages/sharp-pop-328170.mp3')
-        pygame.mixer.music.set_volume(0.2)
+        self.collect_sound.set_volume(0.2)  # <-- Ajoute cette ligne pour régler le volume
         self.animation = self.load_frames(spritesheet_path)
 
         # Animation
