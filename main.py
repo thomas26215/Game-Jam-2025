@@ -211,8 +211,12 @@ def main():
             if game_manager.player_on_portal_interact(quest):
                 quest = HEAL_INFECTED
 
-            if game_manager.draw_end_sequence(screen):
-                state_stack[-1] = STATE_MENU
+            if game_manager.draw_end_sequence(screen) == True:
+                state_stack[-1] = STATE_VICTORY
+                quest = COLLECT_MEDECINE
+            
+            if game_manager.draw_end_sequence(screen) == False:
+                state_stack[-1] = "FADE_TO_GAME_OVER"
                 quest = COLLECT_MEDECINE
 
             if game_manager.player.health <= 0:

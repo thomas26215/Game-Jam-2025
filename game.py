@@ -20,12 +20,12 @@ class GameManager:
         self.has_taken_first_med = False
         self.shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.VISION_RADIUS = self.settings.vision_radius
-        self.resurrected_count = 0 #Compteur de ressuscités
         self.total_zombies = random.randint(20, 40)
 
     def init_game(self):
         self.grid = generate_random_grid(num_rooms=2, total_zombies = self.total_zombies)
         self.current_pos = (0, 0)
+        self.resurrected_count = 0 #Compteur de ressuscités
         self.current_room = self.grid[self.current_pos]
         self.hud = InfoHUD(max_lives=3, current_lives=3)
         self.hud.set_poisoned(True)
@@ -212,8 +212,8 @@ class GameManager:
         if hasattr(self, "end_timer"):
             elapsed = pygame.time.get_ticks() - self.end_timer
 
-            # Étape 1 : après 10 sec → afficher fondu + texte
-            if elapsed > 10000:
+            # Étape 1 : après 5 sec → afficher fondu + texte
+            if elapsed > 5000:
                 fade = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
                 fade.fill((0, 0, 0))
                 fade.set_alpha(220)
@@ -223,14 +223,24 @@ class GameManager:
                 font = pygame.font.SysFont("Arial", 32, bold=True)
                 saved = self.resurrected_count
                 perished = max(0,  - self.resurrected_count)
-
-                lines = [
-                    "Vous avez sauvés certaines personnes.",
-                    "Cependant, toutes n'ont pas survécus.",
-                    f"Vous avez sauvés un total de {saved} personnes,",
-                    f"et {self.total_zombies-saved} personnes ont péri de votre faute.",
-                    "Réessayez pour sauver plus de personnes."
-                ]
+                win = False
+                
+                if saved == self.total_zombies:
+                    lines = [
+                        "Félicitations !",
+                        "Vous avez sauvés toutes les personnes infectées.",
+                        f"Vous êtes un grand médecin !"
+                    ]
+                    win = True
+                elif saved < self.total_zombies :
+                    lines = [
+                        f"{self.total_zombies-saved} personnes ont péri par votre faute.",
+                        "Réessayez pour sauver plus de personnes."
+                    ]
+                else:
+                    lines = [
+                        "Réessayez pour sauver plus de personnes."
+                    ]
 
                 y = SCREEN_HEIGHT // 2 - len(lines) * 20
                 for line in lines:
@@ -240,10 +250,10 @@ class GameManager:
                     y += 50
 
                 # Étape 2 : attendre 5 sec supplémentaires avant retour
-                if elapsed > 15000:  
-                    return True  # ✅ Signale à main() que la séquence de fin est terminée
+                if elapsed > 10000:  
+                    return win  # ✅ Signale à main() que la séquence de fin est terminée
 
-        return False
+        return None
 
 
 
