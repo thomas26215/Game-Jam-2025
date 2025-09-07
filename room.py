@@ -48,22 +48,38 @@ class Room:
         directions = []
         door_length = SW // 10
         door_height = SH // 7
-        if (r - 1, c) in grid or (forced_doors and 'up' in forced_doors):
-            up_rect = pygame.Rect((SW - door_length) // 2, 0, door_length, DOOR_SIZE)
-            self.doors.append(('up', up_rect))
-            directions.append('up')
-        if (r + 1, c) in grid or (forced_doors and 'down' in forced_doors):
-            down_rect = pygame.Rect((SW - door_length) // 2, SH - DOOR_SIZE, door_length, DOOR_SIZE)
-            self.doors.append(('down', down_rect))
-            directions.append('down')
-        if (r, c - 1) in grid or (forced_doors and 'left' in forced_doors):
-            left_rect = pygame.Rect(0, (SH - door_height) // 2, DOOR_SIZE, door_height)
-            self.doors.append(('left', left_rect))
-            directions.append('left')
-        if (r, c + 1) in grid or (forced_doors and 'right' in forced_doors):
-            right_rect = pygame.Rect(SW - DOOR_SIZE, (SH - door_height) // 2, DOOR_SIZE, door_height)
-            self.doors.append(('right', right_rect))
-            directions.append('right')
+
+        # UP
+        up_pos = (r - 1, c)
+        if (up_pos in grid or (forced_doors and 'up' in forced_doors)):
+            # Prevent doors from any room into (0,0)
+            if up_pos != (0, 0):
+                up_rect = pygame.Rect((SW - door_length) // 2, 0, door_length, DOOR_SIZE)
+                self.doors.append(('up', up_rect))
+                directions.append('up')
+        # DOWN
+        down_pos = (r + 1, c)
+        if (down_pos in grid or (forced_doors and 'down' in forced_doors)):
+            if down_pos != (0, 0):
+                down_rect = pygame.Rect((SW - door_length) // 2, SH - DOOR_SIZE, door_length, DOOR_SIZE)
+                self.doors.append(('down', down_rect))
+                directions.append('down')
+        # LEFT
+        left_pos = (r, c - 1)
+        if (left_pos in grid or (forced_doors and 'left' in forced_doors)):
+            # allow door to (0,0) if we are in (0,1)
+            if left_pos != (0, 0) or (self.position == (0, 1)):
+                left_rect = pygame.Rect(0, (SH - door_height) // 2, DOOR_SIZE, door_height)
+                self.doors.append(('left', left_rect))
+                directions.append('left')
+        # RIGHT
+        right_pos = (r, c + 1)
+        if (right_pos in grid or (forced_doors and 'right' in forced_doors)):
+            if right_pos != (0, 0):
+                right_rect = pygame.Rect(SW - DOOR_SIZE, (SH - door_height) // 2, DOOR_SIZE, door_height)
+                self.doors.append(('right', right_rect))
+                directions.append('right')
+
         if directions:
             priority = ['left', 'right', 'up', 'down']
             directions_sorted = sorted(directions, key=lambda d: priority.index(d))
