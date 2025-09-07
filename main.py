@@ -132,6 +132,8 @@ def main():
                     # Si on lance une partie depuis le menu principal ou le game over
                     if state in [STATE_MENU, STATE_GAME_OVER]:
                         game_manager.init_game()
+                        if hasattr(game_manager, "end_timer"):
+                            del game_manager.end_timer
                         state_stack = [STATE_PLAY]   # on remplace la pile par PLAY
                     else:
                         state_stack[-1] = STATE_PLAY
@@ -209,6 +211,9 @@ def main():
             if game_manager.player_on_portal_interact(quest):
                 quest = HEAL_INFECTED
 
+            if game_manager.draw_end_sequence(screen):
+                state_stack[-1] = STATE_MENU
+                quest = COLLECT_MEDECINE
 
             if game_manager.player.health <= 0:
                 state_stack[-1] = "FADE_TO_GAME_OVER"
@@ -228,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

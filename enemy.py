@@ -11,7 +11,8 @@ class Enemy(pygame.sprite.Sprite):
                  frame_width=64, frame_height=64,
                  activation_distance=100, speed_close=1.5,
                  speed_far=0.75, attack_range=1,
-                 attack_damage=1, obstacles=None):
+                 attack_damage=1, obstacles=None,
+                 is_final_scene=False):
         super().__init__()
         self.player = player
         self.screen_width = screen_width
@@ -41,12 +42,15 @@ class Enemy(pygame.sprite.Sprite):
         self.hit_frames = self.load_frames_from_folder(sprites_folder, "Hurt")
         self.death_frames = self.load_frames_from_folder(sprites_folder, "Dead")
         self.resurrected_frames = self.load_frames_from_folder(resurrected_sprites_folder, "Walk") if resurrected_sprites_folder else self.walk_frames
+
+        # Image initiale
         if self.health < 0:
             self.image = self.resurrected_frames[0].copy() if self.resurrected_frames else pygame.Surface((frame_width, frame_height))
         elif self.health > 0:
             self.image = self.walk_frames[0].copy() if self.walk_frames else pygame.Surface((frame_width, frame_height))
         else:
             self.image = self.death_frames[0].copy() if self.death_frames else pygame.Surface((frame_width, frame_height))
+
         self.rect = self.image.get_rect(center=(x, y))
         hitbox_width = int(self.rect.width * 0.3)
         hitbox_height = int(self.rect.height * 0.4)
@@ -59,6 +63,7 @@ class Enemy(pygame.sprite.Sprite):
         self.random_dx = 0
         self.random_dy = 0
         self.direction_timer = 0
+        self.is_final_scene = is_final_scene
 
     def load_frames_from_folder(self, folder, action_name):
         if not folder:
@@ -80,29 +85,87 @@ class Enemy(pygame.sprite.Sprite):
             return
         self.health -= damage
         self.current_frame = 0
-        if self.health == 0:
-            self.taking_damage = False
-            self.attacking = False
-            self.attack_in_progress = False
-            self.damage_applied = False
-        elif self.health < 0:
-            self.taking_damage = False
-            self.attacking = False
-            self.attack_in_progress = False
-            self.damage_applied = False
+        self.taking_damage = self.health > 0
+        self.attacking = False
+        self.attack_in_progress = False
+        self.damage_applied = False
+
+    def animate(self, frames, anim_speed, flip=False, attack_hitbox_check=False):
+        """Animation générique pour l'ennemi."""
+        if not frames:
+            return
+
+        # Avancer l'animation
+        self.current_frame += anim_speed
+        if self.current_frame >= len(frames):
+            self.current_frame = 0
+            if self.attack_in_progress:
+                self.attack_in_progress = False
+                self.attacking = False
+            if self.taking_damage:
+                self.taking_damage = False
+
+        frame = frames[int(self.current_frame)].copy()
+
+        # Flip si nécessaire
+        if flip and self.direction == "left":
+            frame = pygame.transform.flip(frame, True, False)
+
+        self.image = frame
+
+        # Vérification d'attaque
+        if attack_hitbox_check and self.attack_in_progress and not self.damage_applied:
+            if int(self.current_frame) == 3:  # frame clé de l'attaque
+                attack_hitbox = self.hitbox.copy()
+                attack_hitbox.width = self.hitbox.width
+                attack_hitbox.height = self.hitbox.height // 2
+                if self.direction == "right":
+                    attack_hitbox.x += self.hitbox.width // 2
+                else:
+                    attack_hitbox.x -= self.hitbox.width // 2
+                attack_hitbox.y += self.hitbox.height // 4
+                if attack_hitbox.colliderect(self.player.hitbox):
+                    self.player.take_damage(self.attack_damage)
+                    self.damage_applied = True
+
+    def final_scene(self):
+        """Scène finale : uniquement marche."""
+        center_x = self.screen_width // 2
+        center_y = self.screen_height // 2
+        dx = center_x - self.hitbox.centerx
+        dy = center_y - self.hitbox.centery
+        distance = math.hypot(dx, dy)
+
+        if distance > 1:
+            # Avancer vers le centre
+            norm_dx, norm_dy = dx / distance, dy / distance
+            self.hitbox.x += norm_dx * self.speed_close
+            self.hitbox.y += norm_dy * self.speed_close
+            self.direction = "right" if norm_dx >= 0 else "left"
         else:
-            self.taking_damage = True
+            # Une fois arrivé au centre -> disparition
+            self.image.set_alpha(0)
+            return
+
+        self.rect.center = self.hitbox.center
+        self.animate(self.walk_frames, self.animation_speed, flip=True)
+
 
     def update(self, current_room):
         if self.health == 0:
             return
 
+        # Scène finale
+        if self.is_final_scene:
+            self.final_scene()
+            return
+
+        # Déplacement et comportement
         dx = self.player.hitbox.centerx - self.hitbox.centerx
         dy = self.player.hitbox.centery - self.hitbox.centery
         distance = math.hypot(dx, dy)
 
-        # === Ennemi ressuscité ===
-        if self.health < 0:
+        if self.health < 0:  # ressuscité
             self.attacking = False
             self.attack_in_progress = False
             self.direction_timer -= 1
@@ -113,8 +176,6 @@ class Enemy(pygame.sprite.Sprite):
                 self.direction_timer = random.randint(30, 90)
             dx_norm, dy_norm = self.random_dx, self.random_dy
             speed = self.speed_close
-
-        # === Ennemi normal ===
         else:
             if not self.attack_in_progress and distance <= self.attack_range:
                 self.attacking = True
@@ -139,18 +200,15 @@ class Enemy(pygame.sprite.Sprite):
                 dx_norm, dy_norm = 0, 0
                 speed = 0
 
-        # Déplacements et collisions
+        # Déplacement et collisions
         self.hitbox.x += dx_norm * speed
+        self.hitbox.y += dy_norm * speed
         for obs in current_room.obstacles:
             if self.hitbox.colliderect(obs):
                 if dx_norm > 0:
                     self.hitbox.right = obs.left
                 elif dx_norm < 0:
                     self.hitbox.left = obs.right
-
-        self.hitbox.y += dy_norm * speed
-        for obs in current_room.obstacles:
-            if self.hitbox.colliderect(obs):
                 if dy_norm > 0:
                     self.hitbox.bottom = obs.top
                 elif dy_norm < 0:
@@ -159,56 +217,36 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.hitbox.center
         self.direction = "right" if dx >= 0 else "left"
 
-        # Choix frames
+        # Choix des frames
         if self.health < 0:
             frames = self.resurrected_frames
-            speed = self.animation_speed
+            anim_speed = self.animation_speed
+            check_attack = False
         elif self.health == 0:
             frames = self.death_frames
-            speed = self.death_animation_speed
+            anim_speed = self.death_animation_speed
+            check_attack = False
         elif self.taking_damage:
             frames = self.hit_frames
-            speed = self.hit_animation_speed
+            anim_speed = self.hit_animation_speed
+            check_attack = False
         elif self.attack_in_progress:
             frames = self.attack_frames
-            speed = self.attack_animation_speed
+            anim_speed = self.attack_animation_speed
+            check_attack = True
         else:
             frames = self.walk_frames
-            speed = self.animation_speed
+            anim_speed = self.animation_speed
+            check_attack = False
 
-        # Animation
-        if frames:
-            self.current_frame += speed
-            if self.attack_in_progress and not self.damage_applied and int(self.current_frame) == 3:
-                attack_hitbox = self.hitbox.copy()
-                attack_hitbox.width = self.hitbox.width
-                attack_hitbox.height = self.hitbox.height // 2
-                if self.direction == "right":
-                    attack_hitbox.x += self.hitbox.width // 2
-                else:
-                    attack_hitbox.x -= self.hitbox.width // 2
-                attack_hitbox.y += self.hitbox.height // 4
-                if attack_hitbox.colliderect(self.player.hitbox):
-                    self.player.take_damage(self.attack_damage)
-                    self.damage_applied = True
-            if self.current_frame >= len(frames):
-                if self.health == 0:
-                    pass
-                self.attack_in_progress = False
-                self.attacking = False
-                self.taking_damage = False
-                self.current_frame = 0
-            frame = frames[int(self.current_frame)].copy()
-            if self.direction == "left":
-                frame = pygame.transform.flip(frame, True, False)
-            self.image = frame
+        self.animate(frames, anim_speed, flip=True, attack_hitbox_check=check_attack)
 
+        # Clamp pour rester dans l'écran
         self.rect.clamp_ip(pygame.Rect(0, 0, self.screen_width, self.screen_height))
         self.hitbox.center = self.rect.center
 
     def draw(self, surface):
         if self.health != 0:
             surface.blit(self.image, self.rect)
-
         pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
 

@@ -148,6 +148,8 @@ class Room:
             med.collected = self.medicaments_state[pos]
             self.medicaments.append(med)
 
+
+
     def update_medicaments_state(self):
         for med, pos in zip(self.medicaments, self.medicaments_positions):
             self.medicaments_state[pos] = med.collected
@@ -156,9 +158,7 @@ class Room:
         """Met à jour la vie des ennemis dans enemies_data."""
         for enemy, data in zip(self.enemies, self.enemies_data):
             data["health"] = enemy.health  # Mettre à jour la vie uniquement
-            print("ennemies présents dans la pièce :", len(self.enemies))
 
-        print("Vie des ennemis dans la salle :", [data["health"] for data in self.enemies_data])
 
 
     def clear_medicaments(self):
@@ -189,7 +189,7 @@ class Room:
         for med in self.medicaments:
             med.draw(surface)
 
-def generate_random_grid(num_rooms=3):
+def generate_random_grid(num_rooms=2, total_zombies=10):
     grid = {}
     start = (0, 0)
 
@@ -233,7 +233,6 @@ def generate_random_grid(num_rooms=3):
 
     # --- Répartition des zombies dans les 9 salles ---
     normal_rooms = [room for pos, room in grid.items() if pos != start and not getattr(room, "is_final", False)]
-    total_zombies = random.randint(20, 37)
     print  ("Total zombies à répartir :", total_zombies)
     zombies_left = total_zombies
 
@@ -310,3 +309,24 @@ def clear_all_medicaments_in_rooms(rooms):
         room_iterable = rooms
     for room in room_iterable:
         room.clear_medicaments()
+
+
+
+
+# Fonction utilitaire
+def generate_boss_room_for(room, grid):
+    room.nb_enemies_in_room = 0
+    room.enemies.clear()
+    room.medicaments.clear()
+    room.medicaments_positions.clear()
+    room.medicaments_state.clear()
+
+    room.generate_walls_and_doors(grid, forced_doors=['left'])
+    room.load_map()
+
+    from portail import Portail
+    room.portail = Portail(
+        SCREEN_WIDTH // 2 - 100 // 2,
+        SCREEN_HEIGHT // 2 - 100 // 2,
+        100, 100
+    )

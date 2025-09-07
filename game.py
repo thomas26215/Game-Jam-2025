@@ -4,7 +4,8 @@ from config import COLLECT_MEDECINE, FONT, SCREEN_HEIGHT, SCREEN_WIDTH
 import draw_minimap
 from infos_hud import InfoHUD
 from player import Player
-from room import draw_portal_if_boss_room, generate_random_grid, clear_all_medicaments_in_rooms
+from room import draw_portal_if_boss_room, generate_random_grid, clear_all_medicaments_in_rooms, generate_boss_room_for
+import random
 
 
 class GameManager:
@@ -19,9 +20,11 @@ class GameManager:
         self.has_taken_first_med = False
         self.shadow_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.VISION_RADIUS = self.settings.vision_radius
+        self.resurrected_count = 0 #Compteur de ressuscités
+        self.total_zombies = random.randint(20, 40)
 
     def init_game(self):
-        self.grid = generate_random_grid(num_rooms=10)
+        self.grid = generate_random_grid(num_rooms=2, total_zombies = self.total_zombies)
         self.current_pos = (0, 0)
         self.current_room = self.grid[self.current_pos]
         self.hud = InfoHUD(max_lives=3, current_lives=3)
@@ -58,13 +61,17 @@ class GameManager:
             attack_rect = self.player.attack_rect
             for enemy in self.current_room.enemies:
                 if enemy.alive and attack_rect.colliderect(enemy.hitbox):
-                    damage = 1 if quest == COLLECT_MEDECINE else 3
-                    enemy.take_damage(damage=damage)
-                    # print("quéte:", quest, " - Ennemi touché ! Vie restante :", enemy.health)
-                    # On ne touche qu’un ennemi par frame pour éviter multi-hit
-                    break
-            
+                    if quest == COLLECT_MEDECINE:
+                        damage = 1
+                        enemy.take_damage(damage=damage)
+                    else:  # 🔹 En mode HEAL_INFECTED
+                        if enemy.health > 0:  # Convention : vie < 0 = "ressuscité"
+                            self.resurrected_count += 1
+                        enemy.take_damage(damage=3)
+                    
+                    break  # On évite le double-hit
             self.player.has_hit_enemy = True
+            print("Nombre de ressuscités :", self.resurrected_count)
 
 
     def update_enemies(self):
@@ -157,14 +164,89 @@ class GameManager:
         interact_pressed = any(keys[key] for key in self.settings.get_control("interact", "keyboard"))
         if self.player.joystick and not interact_pressed:
             interact_pressed = any(self.player.joystick.get_button(btn) for btn in self.settings.get_control("interact", "gamepad"))
-        
+
         on_portal = draw_portal_if_boss_room(pygame.display.get_surface(), self.current_room, self.player, self.settings)
-        
-        if on_portal and interact_pressed and quest == COLLECT_MEDECINE:
-            self.teleport_to_start()
-            clear_all_medicaments_in_rooms(self.grid)
-            return True
-        return False  
+
+        if on_portal and interact_pressed:
+            if quest == COLLECT_MEDECINE:
+                # Mode normal : téléportation au départ
+                self.teleport_to_start()
+                clear_all_medicaments_in_rooms(self.grid)
+                return True
+            else:  
+                # 🔹 Mode HEAL_INFECTED
+                from room import generate_boss_room_for
+                from enemy import Enemy
+
+                # Trouver la salle finale
+                final_room = next((room for room in self.grid.values() if getattr(room, "is_final", False)), None)
+                if final_room:
+                    # Régénérer la salle du boss
+                    generate_boss_room_for(final_room, self.grid)
+
+                    # Générer les ressuscités
+                    for _ in range(self.resurrected_count):
+                        x = random.randint(50, SCREEN_WIDTH - 50)
+                        y = random.randint(50, SCREEN_HEIGHT - 50)
+                        human = Enemy(
+                            x, y, self.player,
+                            SCREEN_WIDTH, SCREEN_HEIGHT,
+                            sprites_folder="Humans/Homeless_1",
+                            base_health=2,
+                            is_final_scene=True,
+                            frame_width=128,
+                            frame_height=128,
+                        )
+                        final_room.enemies.append(human)
+
+                    # ⏱️ Lancer le compte à rebours (10 sec)
+                    self.end_timer = pygame.time.get_ticks()
+                    self.show_end_message = False
+
+                return True
+
+        return False
+
+    def draw_end_sequence(self, surface):
+        """Affiche le fondu noir et le message de fin après 10s, puis retourne True après 5s de message."""
+        if hasattr(self, "end_timer"):
+            elapsed = pygame.time.get_ticks() - self.end_timer
+
+            # Étape 1 : après 10 sec → afficher fondu + texte
+            if elapsed > 10000:
+                fade = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                fade.fill((0, 0, 0))
+                fade.set_alpha(220)
+                surface.blit(fade, (0, 0))
+
+                # Texte du message final
+                font = pygame.font.SysFont("Arial", 32, bold=True)
+                saved = self.resurrected_count
+                perished = max(0,  - self.resurrected_count)
+
+                lines = [
+                    "Vous avez sauvés certaines personnes.",
+                    "Cependant, toutes n'ont pas survécus.",
+                    f"Vous avez sauvés un total de {saved} personnes,",
+                    f"et {self.total_zombies-saved} personnes ont péri de votre faute.",
+                    "Réessayez pour sauver plus de personnes."
+                ]
+
+                y = SCREEN_HEIGHT // 2 - len(lines) * 20
+                for line in lines:
+                    text_surf = font.render(line, True, (255, 255, 255))
+                    rect = text_surf.get_rect(center=(SCREEN_WIDTH // 2, y))
+                    surface.blit(text_surf, rect)
+                    y += 50
+
+                # Étape 2 : attendre 5 sec supplémentaires avant retour
+                if elapsed > 15000:  
+                    return True  # ✅ Signale à main() que la séquence de fin est terminée
+
+        return False
+
+
+
         
     def draw(self, surface, quest):
         self.current_room.draw(surface)
@@ -200,3 +282,8 @@ class GameManager:
         if self.current_pos == (0, 0) and not self.has_taken_first_med:
             message = FONT.render("Récupérez la potion pour continuer !", True, (255, 0, 0))
             surface.blit(message, (SCREEN_WIDTH // 2 - message.get_width() // 2, 20))
+
+        # 🔹 Dessiner la séquence de fin si timer actif
+        self.draw_end_sequence(surface)
+
+
