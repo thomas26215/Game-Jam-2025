@@ -13,12 +13,12 @@ class Player(pygame.sprite.Sprite):
         self.settings = settings
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.speed = 3.5
+        self.speed = 3
         self.original_speed = self.speed  # Sauvegarde de la vitesse
         self.direction = "right"
         self.state = "idle"
         self.moving = False
-        self.health = 100
+        self.health = 3
         self.attack_rect = None
         self.has_hit_enemy = False  
         self.hud = hud  
@@ -226,10 +226,6 @@ class Player(pygame.sprite.Sprite):
             return  # Ne rien dessiner si invisible
 
         surface.blit(self.image, self.rect)
-        pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
-        pygame.draw.rect(surface, (255, 255, 0), self.rect, 2)
-        if self.attack_rect:
-            pygame.draw.rect(surface, (0, 255, 0), self.attack_rect, 2)
 
     def make_invisible_and_immobile(self):
         """Rend le joueur invisible et empêche tout mouvement ou action."""

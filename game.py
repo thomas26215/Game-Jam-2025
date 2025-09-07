@@ -24,7 +24,7 @@ class GameManager:
         self.is_portal_active = True
 
     def init_game(self):
-        self.grid = generate_random_grid(num_rooms=2, total_zombies = self.total_zombies)
+        self.grid = generate_random_grid(num_rooms=random.randint(8, 12), total_zombies = self.total_zombies)
         self.current_pos = (0, 0)
         self.resurrected_count = 0 #Compteur de ressuscités
         self.current_room = self.grid[self.current_pos]

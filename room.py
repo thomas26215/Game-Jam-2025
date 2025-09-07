@@ -195,7 +195,10 @@ class Room:
                         if tile:
                             surface.blit(tile, (x * tmx_data.tilewidth, y * tmx_data.tileheight))
         for _, door in self.doors:
-            pygame.draw.rect(surface, (255, 0, 0, 0), door)
+            s = pygame.Surface((door.width, door.height), pygame.SRCALPHA)
+            s.fill((0, 0, 0, 0))  # complètement transparent
+            surface.blit(s, (door.x, door.y))
+
         for enemy in self.enemies:
             enemy.draw(surface)
         for med in self.medicaments:

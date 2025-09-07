@@ -248,5 +248,4 @@ class Enemy(pygame.sprite.Sprite):
     def draw(self, surface):
         if self.health != 0:
             surface.blit(self.image, self.rect)
-        pygame.draw.rect(surface, (255, 0, 0), self.hitbox, 2)
 
