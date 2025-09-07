@@ -11,7 +11,8 @@ Ce projet est le résultat d'une Game Jam organisée par nos professeurs, durant
 Bienvenue dans Contagium ! Dans ce jeu, vous incarnez un médecin de la peste, véritable dernier espoir pour une ville ravagée par une maladie. Votre mission est de retrouver les potions dispersées à travers les rues désertes afin de sauver les habitants encore en vie. Cependant, la cité est infestée de pestiférés, des âmes perdues qui ont perdu toute conscience. Il faut être prudent et éviter qu’ils ne vous touchent, sous peine de devenir l’un d’eux. Une fois toutes les potions récupérées, votre défi sera de trouver le portail menant au monde des pestiférés, sachant que ce passage est un aller simple. Le nombre de potions collectées s’affiche en haut à gauche de l’écran : faites attention à ne pas les gaspiller. Enfin, rappelez-vous que votre objectif n’est pas de tuer les pestiférés, mais bien de les sauver en leur lançant les potions récoltées.
 
 ## Installation et lancement
-1. Cloner ce dépôt  
+1. Récupéré le code
+Par zip si vous avez reçu l'archive ou bien via git.
 ```bash
 git clone git@github.com:thomas26215/Game-Jam-2025.git
 ```
